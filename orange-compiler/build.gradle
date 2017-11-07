@@ -21,11 +21,10 @@ repositories {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     compile deps.java_poet
     compile deps.auto_service
-    compileOnly deps.android_support_annotations
+    compileOnly project(':orange-annotations')
 }
 
 tasks.withType(JavaCompile) {
