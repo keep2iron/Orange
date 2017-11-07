@@ -8,9 +8,9 @@ import java.lang.annotation.Target;
 /**
  * @author keep2iron <a href="http://keep2iron.github.io">Contract me.</a>
  * @version 1.0
- * @since 2017/11/05 14:36
+ * @since 2017/11/06 18:48
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
-public @interface BindMutileType {
+public @interface BindOnItemClick {
 }

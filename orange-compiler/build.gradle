@@ -23,9 +23,9 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile 'com.squareup:javapoet:1.8.0'
-    compile 'com.google.auto.service:auto-service:1.0-rc2'
-    compile project(path: ':orange-annotations')
+    compile deps.java_poet
+    compile deps.auto_service
+    compileOnly deps.android_support_annotations
 }
 
 tasks.withType(JavaCompile) {

@@ -20,7 +20,7 @@ artifacts {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    compileOnly "com.android.support:support-annotations:26.0.2"
+    compileOnly deps.android_support_annotations
 }
 
 tasks.withType(JavaCompile) {

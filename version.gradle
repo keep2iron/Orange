@@ -1,0 +1,52 @@
+/**
+ * Shared file between builds so that they can all use the same dependencies and
+ * maven repositories.
+ **/
+ext.deps = [:]
+def versions = [:]
+versions.gradle_plugin_version = "3.0.0"
+versions.gradle_maven_version = "1.5"
+versions.support_version = "26.0.2"
+versions.orange_version = "0.0.4"
+versions.javapoet = "1.8.0"
+versions.auto_service = "1.0-rc2"
+versions.bravh = "2.9.33"
+
+deps = [:]
+deps.orange_annotations = "com.github.keep2iron.orange:orange-annotations:$versions.orange_version"
+deps.orange_api = "com.github.keep2iron.orange:orange-api:$versions.orange_version"
+deps.orange_compiler = "com.github.keep2iron.orange:orange-compiler:$versions.orange_version"
+
+deps.java_poet = "com.squareup:javapoet:$versions.javapoet"
+deps.auto_service = "com.google.auto.service:auto-service:$versions.auto_service"
+deps.bravh = "com.github.CymChad:BaseRecyclerViewAdapterHelper:$versions.bravh"
+
+deps.android_support_annotations = "com.android.support:support-annotations:$versions.support_version"
+deps.android_recycler_view = "com.android.support:recyclerview-v7:$versions.support_version"
+
+deps.android_gradle_plugin = "com.android.tools.build:gradle:$versions.gradle_plugin_version"
+deps.gradle_maven_plugin = "com.github.dcendents:android-maven-gradle-plugin:$versions.gradle_maven_version"
+
+ext.deps = deps
+
+def addKotlin(DependencyHandler handler) {
+    handler.add("implementation", deps.kotlin_jre7)
+}
+
+ext.addKotlin = this.&addKotlin
+
+def addOrange(DependencyHandler handler, boolean isUseKotlin = false, boolean isCompile = true) {
+    handler.add("implementation", deps.orange.orange_api)
+    handler.add(isUseKotlin ? "kapt" : "annotationProcessor", deps.orange.orange_compiler)
+}
+
+ext.addOrange = this.&addOrange
+
+def addRepos(RepositoryHandler handler) {
+    handler.google()
+    handler.jcenter()
+    handler.maven { url "https://jitpack.io" }
+    handler.mavenCentral()
+}
+
+ext.addRepos = this.&addRepos
