@@ -39,6 +39,7 @@ public class BuildingSet {
     private TypeSpec.Builder mClassBuilder;
 
     private String mPackageName;
+    private int mItemResId;
 
     boolean mIsUseDataBinding;
     ClassName mDataBindingViewHolderClass;
@@ -78,7 +79,7 @@ public class BuildingSet {
             throw new IllegalArgumentException("your must define least 1 items id in @RecyclerHolder(items={})");
         }
 
-        if(mIsUseDataBinding){
+        if (mIsUseDataBinding) {
             createDataBindingMethod(recyclerHolderType);
         }
     }
@@ -94,7 +95,7 @@ public class BuildingSet {
                 .addStatement("$T binding = $T.inflate(mLayoutInflater, layoutResId, parent, false);", VIEW_DATA_BINDING_CLASS, DATA_BINDING_UTILS_CLASS)
                 .addStatement("if(binding == null){return super.getItemView(layoutResId, parent);}")
                 .addStatement("$T view = binding.getRoot()", VIEW_CLASS)
-                .addStatement("view.setTag(R.id.BaseQuickAdapter_databinding_support, binding)")
+                .addStatement("view.setTag($L, binding)", mItemResId)
                 .addStatement("return view");
 
         TypeSpec.Builder innerViewHolderClass = TypeSpec.classBuilder(recyclerHolderType.getSimpleName() + "Holder")
@@ -107,7 +108,7 @@ public class BuildingSet {
                 .addMethod(MethodSpec.methodBuilder("getBinding")
                         .addModifiers(Modifier.PUBLIC)
                         .returns(VIEW_DATA_BINDING_CLASS)
-                        .addStatement("return ($T) itemView.getTag(R.id.BaseQuickAdapter_databinding_support)", VIEW_DATA_BINDING_CLASS)
+                        .addStatement("return ($T) itemView.getTag($L)", VIEW_DATA_BINDING_CLASS, mItemResId)
                         .build());
 
         TypeSpec innerClass = innerViewHolderClass.build();
@@ -130,6 +131,8 @@ public class BuildingSet {
     }
 
     private void createConstructor(Element recyclerHolderType, TypeName genericType, int itemResId, int headerResId) {
+        mItemResId = itemResId;
+
         //generate constructor
         MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
