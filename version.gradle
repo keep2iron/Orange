@@ -13,9 +13,13 @@ versions.auto_service = "1.0-rc2"
 versions.bravh = "2.9.33"
 
 deps = [:]
-deps.orange_annotations = "com.github.keep2iron.orange:orange-annotations:$versions.orange_version"
-deps.orange_api = "com.github.keep2iron.orange:orange-api:$versions.orange_version"
-deps.orange_compiler = "com.github.keep2iron.orange:orange-compiler:$versions.orange_version"
+//deps.orange_annotations = "com.github.keep2iron.orange:orange-annotations:$versions.orange_version"
+//deps.orange_api = "com.github.keep2iron.orange:orange-api:$versions.orange_version"
+//deps.orange_compiler = "com.github.keep2iron.orange:orange-compiler:$versions.orange_version"
+
+deps.orange_annotations = "project(':orange-annotations')"
+deps.orange_api = "project(':orange-api')"
+deps.orange_compiler = "project(':orange-compiler')"
 
 deps.java_poet = "com.squareup:javapoet:$versions.javapoet"
 deps.auto_service = "com.google.auto.service:auto-service:$versions.auto_service"

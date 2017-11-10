@@ -24,7 +24,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     compile deps.java_poet
     compile deps.auto_service
-    compileOnly project(':orange-annotations')
+    compile project(':orange-annotations')
 }
 
 tasks.withType(JavaCompile) {

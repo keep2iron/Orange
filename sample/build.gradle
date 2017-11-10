@@ -9,7 +9,15 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        REFRESH_CLASS_NAME              : "android.support.v4.widget.SwipeRefreshLayout",
+                        REFRESH_LISTENER_CLASS_NAME     : "android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener",
+                        SET_REFRESH_LISTENER_METHOD_NAME: "setOnRefreshListener"
+                ]
+            }
+        }
     }
     buildTypes {
         release {
@@ -17,7 +25,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    dataBinding{
+    dataBinding {
         enabled = true
     }
 }
@@ -33,7 +41,11 @@ dependencies {
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.33'
     compile deps.android_recycler_view
 
-    compile deps.orange_api
-    compileOnly deps.orange_annotations
-    annotationProcessor deps.orange_compiler
+//    compile deps.orange_api
+//    compileOnly deps.orange_annotations
+//    annotationProcessor deps.orange_compiler
+
+    compile project(':orange-api')
+    annotationProcessor project(':orange-compiler')
+    compile project(':orange-annotations')
 }

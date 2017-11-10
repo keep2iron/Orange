@@ -19,8 +19,10 @@ artifacts {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     compileOnly deps.android_support_annotations
+    compileOnly deps.android_recycler_view
+    api 'javax.inject:javax.inject:1'
 }
 
 tasks.withType(JavaCompile) {

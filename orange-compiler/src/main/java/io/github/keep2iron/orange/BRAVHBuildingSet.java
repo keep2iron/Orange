@@ -17,7 +17,11 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 
+import io.github.keep2iron.orange.annotations.LoadMoreAble;
+import io.github.keep2iron.orange.annotations.OnLoadMore;
+import io.github.keep2iron.orange.annotations.OnRefresh;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
+import io.github.keep2iron.orange.util.ClassUtil;
 
 import static io.github.keep2iron.orange.util.ClassUtil.BASE_QUICK_ADAPTER;
 import static io.github.keep2iron.orange.util.ClassUtil.BASE_VIEW_HOLDER;
@@ -33,10 +37,19 @@ import static io.github.keep2iron.orange.util.ClassUtil.VIEW_GROUP_CLASS;
  * @version 1.0
  * @since 2017/11/05 11:17
  */
-public class BuildingSet {
-
+public class BRAVHBuildingSet {
+    /**
+     * adapter 泛型参数
+     */
     private TypeName mGenericType;
+    /**
+     * adapter 类的构造器
+     */
     private TypeSpec.Builder mClassBuilder;
+    /**
+     * adapter 构造方法的构造器
+     */
+    private MethodSpec.Builder mConstructorBuilder;
 
     private String mPackageName;
     private int mItemResId;
@@ -44,7 +57,7 @@ public class BuildingSet {
     boolean mIsUseDataBinding;
     ClassName mDataBindingViewHolderClass;
 
-    public BuildingSet(Element recyclerHolderType) {
+    public BRAVHBuildingSet(Element recyclerHolderType) {
         RecyclerHolder recyclerHolder = recyclerHolderType.getAnnotation(RecyclerHolder.class);
         mPackageName = ClassName.get((TypeElement) recyclerHolderType).packageName();
 
@@ -73,7 +86,7 @@ public class BuildingSet {
                     .addModifiers(Modifier.PUBLIC)
                     .superclass(ParameterizedTypeName.get(BASE_QUICK_ADAPTER, mGenericType, mIsUseDataBinding ? mDataBindingViewHolderClass : BASE_VIEW_HOLDER));
 
-            createField(recyclerHolderType, mGenericType);
+            createField(recyclerHolderType);
             createConstructor(recyclerHolderType, mGenericType, itemResIds[0], headerResId);
         } else {
             throw new IllegalArgumentException("your must define least 1 items id in @RecyclerHolder(items={})");
@@ -120,9 +133,8 @@ public class BuildingSet {
      * create field in the generate java file
      *
      * @param recyclerHolderType
-     * @param mGenericType
      */
-    private void createField(Element recyclerHolderType, TypeName mGenericType) {
+    private void createField(Element recyclerHolderType) {
         TypeElement classElement = (TypeElement) recyclerHolderType;
 
         mClassBuilder.addField(FieldSpec.builder(ClassName.get(classElement), "mRecyclerHolder")
@@ -134,7 +146,7 @@ public class BuildingSet {
         mItemResId = itemResId;
 
         //generate constructor
-        MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
+        mConstructorBuilder = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(CONTEXT_CLASS, "context")
                 .addParameter(ParameterizedTypeName.get(LIST_CLASS, genericType), "data")
@@ -143,11 +155,9 @@ public class BuildingSet {
                 .addStatement("this.mRecyclerHolder = recyclerHolder");
 
         if (headerResId != -1) {
-            constructorBuilder.addStatement("$T headerView = $T.inflate(context,$L,null)", VIEW_CLASS, VIEW_CLASS, headerResId)
+            mConstructorBuilder.addStatement("$T headerView = $T.inflate(context,$L,null)", VIEW_CLASS, VIEW_CLASS, headerResId)
                     .addStatement("addHeaderView(headerView)");
         }
-
-        mClassBuilder.addMethod(constructorBuilder.build());
     }
 
     /**
@@ -181,9 +191,47 @@ public class BuildingSet {
     }
 
     /**
+     * in generate code bind onLoadMoreRequest method
+     *
+     * @param loadMoreMethod
+     */
+    public void bindLoadMore(Element loadMoreMethod) {
+        mClassBuilder.addSuperinterface(OnLoadMore.class);
+
+        mClassBuilder.addMethod(MethodSpec.methodBuilder("onLoadMore")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(void.class)
+                .addStatement("mRecyclerHolder.$N()", loadMoreMethod.getSimpleName().toString()).build());
+    }
+
+    public void bindInjectAdapter(Element injectFiled) {
+        if (injectFiled.getModifiers().contains(Modifier.PRIVATE)) {
+            throw new IllegalArgumentException(injectFiled.getSimpleName() + "can't set private,please use default or public");
+        }
+
+        mConstructorBuilder.addStatement("recyclerHolder.$N = this", injectFiled.getSimpleName().toString());
+
+    }
+
+    public void bindInjectLoadMore(Element injectFiled) {
+        if (injectFiled.getModifiers().contains(Modifier.PRIVATE)) {
+            throw new IllegalArgumentException(injectFiled.getSimpleName() + "can't set private,please use default or public");
+        }
+
+        mClassBuilder.addMethod(MethodSpec.methodBuilder("setLoadMoreAbleWithHolder")
+                .addParameter(LoadMoreAble.class, "loadMoreAble")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement("mRecyclerHolder.$N = loadMoreAble", injectFiled.getSimpleName().toString())
+                .returns(void.class).build());
+    }
+
+    /**
      * generate file
      */
     public void build(Filer filer) {
+        mClassBuilder.addMethod(mConstructorBuilder.build());
+
         try {
             JavaFile.builder(mPackageName, mClassBuilder.build()).build().writeTo(filer);
         } catch (IOException e) {
