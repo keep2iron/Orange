@@ -1,6 +1,8 @@
 package io.github.keep2iron.orange.processor;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.TypeName;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -18,6 +20,8 @@ import javax.inject.Inject;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
@@ -77,6 +81,7 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
             return true;
         }
 
+
         //bind @RecyclerHolder class
         bindRecyclerHolder(roundEnvironment);
 
@@ -97,6 +102,20 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
         for (Element ele : recyclerHolderElements) {
             TypeElement classFile = (TypeElement) ele;
             RefreshBuildingSet buildingSet = new RefreshBuildingSet(ele);
+
+            RecyclerHolder recyclerHolder = ele.getAnnotation(RecyclerHolder.class);
+            TypeName moduleType = null;
+            try {
+                ClassName.get(recyclerHolder.module());
+            }catch (MirroredTypeException exception){
+                TypeMirror locatorType = exception.getTypeMirror();
+                moduleType = ClassName.get(locatorType);
+            }
+
+            if(!"void".equals(moduleType.toString())){
+                mBuildingMap.put(moduleType.toString(), buildingSet);
+            }
+
             mBuildingMap.put(classFile.getQualifiedName().toString(), buildingSet);
         }
     }
@@ -104,7 +123,7 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
     private void bindOnRefresh(RoundEnvironment roundEnvironment) {
         Set<? extends Element> refreshElements = roundEnvironment.getElementsAnnotatedWith(BindOnRefresh.class);
         if (refreshElements != null &&
-                refreshElements.size() != 0) {
+            refreshElements.size() != 0) {
 
             for (Element ele : refreshElements) {
                 TypeElement classFile = (TypeElement) ele.getEnclosingElement();

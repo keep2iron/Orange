@@ -5,8 +5,6 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -31,12 +29,16 @@ public class OrangeOptions<T> {
     boolean isLoadMore;
     boolean isRefresh;
 
-    public OrangeOptions(@NonNull Context context) {
+    Object mModule;
+
+
+    public OrangeOptions(Object module,@NonNull Context context) {
         this.context = context.getApplicationContext();
+        this.mModule = module;
     }
 
     public void buildVertical() {
-        layoutManager = new LinearLayoutManager(context);
+        layoutManager = new WrapContentLinearLayoutManager(context);
     }
 
     public void buildRecyclerViewAdapter(RecyclerView recyclerView, @NonNull List<T> data) {

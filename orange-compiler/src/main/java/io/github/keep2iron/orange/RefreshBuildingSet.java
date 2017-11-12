@@ -19,7 +19,6 @@ import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 
 import io.github.keep2iron.orange.annotations.BindOnRefresh;
-import io.github.keep2iron.orange.annotations.LoadMoreAble;
 import io.github.keep2iron.orange.annotations.OnRefresh;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
 import io.github.keep2iron.orange.annotations.Refreshable;
@@ -38,23 +37,42 @@ public class RefreshBuildingSet {
     MethodSpec.Builder mConstructorBuilder;
 
     private final String mPackageName;
+    private TypeName mModuleLayerType = null;
+
 
     public RefreshBuildingSet(Element recyclerHolderType) {
+        RecyclerHolder recyclerHolder = recyclerHolderType.getAnnotation(RecyclerHolder.class);
         mPackageName = ClassName.get((TypeElement) recyclerHolderType).packageName();
 
         mClassBuilder = TypeSpec.classBuilder(recyclerHolderType.getSimpleName() + "RefreshAdapter")
-                .addSuperinterface(OnRefresh.class)
                 .addModifiers(Modifier.PUBLIC);
 
         TypeElement classElement = (TypeElement) recyclerHolderType;
-        mClassBuilder.addField(FieldSpec.builder(ClassName.get(classElement), "mRecyclerHolder")
+        mClassBuilder.addField(FieldSpec.builder(ClassName.get(classElement), "mViewLayer")
                 .addModifiers(Modifier.PRIVATE)
                 .build());
 
+
         mConstructorBuilder = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(TypeName.get(recyclerHolderType.asType()), "recyclerHolder")
-                .addStatement("this.mRecyclerHolder = recyclerHolder");
+                .addParameter(TypeName.get(recyclerHolderType.asType()), "viewLayer")
+                .addStatement("this.mViewLayer = viewLayer");
+
+        try {
+            recyclerHolder.module();
+        }catch (MirroredTypeException exception) {
+            TypeMirror locatorType = exception.getTypeMirror();
+            mModuleLayerType = ClassName.get(locatorType);
+            if ("void".equals(mModuleLayerType.toString())) {
+                mModuleLayerType = ClassName.get(recyclerHolderType.asType());
+            }
+        }
+
+        mClassBuilder.addField(FieldSpec.builder(mModuleLayerType, "mModuleLayer")
+                .addModifiers(Modifier.PRIVATE)
+                .build());
+        mConstructorBuilder.addParameter(mModuleLayerType, "module")
+                .addStatement("this.mModuleLayer = module");
     }
 
     /**
@@ -94,6 +112,8 @@ public class RefreshBuildingSet {
     }
 
     public void bindOnRefresh(Element onRefreshMethod, String... compilerOptions) {
+        mClassBuilder.addSuperinterface(OnRefresh.class);
+
         BindOnRefresh bindOnRefresh = onRefreshMethod.getAnnotation(BindOnRefresh.class);
 
         TypeName listenerClass;
@@ -141,7 +161,8 @@ public class RefreshBuildingSet {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .returns(void.class)
-                .addStatement("mRecyclerHolder.$N()", onRefreshMethod.getSimpleName().toString()).build());
+                .addStatement("mModuleLayer.$N()",
+                        onRefreshMethod.getSimpleName().toString()).build());
     }
 
     public void bindInject(Element injectFiled) {
@@ -153,11 +174,13 @@ public class RefreshBuildingSet {
                 .addParameter(Refreshable.class, "refreshAble")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
-                .addStatement("mRecyclerHolder.$N = refreshAble", injectFiled.getSimpleName().toString())
+                .addStatement("mModuleLayer.$N = refreshAble",
+                        injectFiled.getSimpleName().toString())
                 .returns(void.class).build());
     }
 
     public void build(Filer filer) {
+
         mClassBuilder.addMethod(mConstructorBuilder.build());
 
         try {
@@ -166,6 +189,4 @@ public class RefreshBuildingSet {
             e.printStackTrace();
         }
     }
-
-
 }

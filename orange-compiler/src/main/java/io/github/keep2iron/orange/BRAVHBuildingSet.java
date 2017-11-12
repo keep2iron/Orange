@@ -19,7 +19,6 @@ import javax.lang.model.type.TypeMirror;
 
 import io.github.keep2iron.orange.annotations.LoadMoreAble;
 import io.github.keep2iron.orange.annotations.OnLoadMore;
-import io.github.keep2iron.orange.annotations.OnRefresh;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
 import io.github.keep2iron.orange.util.ClassUtil;
 
@@ -58,9 +57,11 @@ public class BRAVHBuildingSet {
     ClassName mDataBindingViewHolderClass;
 
     public BRAVHBuildingSet(Element recyclerHolderType) {
+        //get @RecyclerHolder arguments
         RecyclerHolder recyclerHolder = recyclerHolderType.getAnnotation(RecyclerHolder.class);
         mPackageName = ClassName.get((TypeElement) recyclerHolderType).packageName();
-
+        //moduleType  生成的LoadMoreAble对象和Refreshable对象注入到对象中module
+        TypeName moduleType = null;
         int[] itemResIds = recyclerHolder.items();
         int headerResId = recyclerHolder.header();
         mIsUseDataBinding = recyclerHolder.isUseDataBinding();
@@ -73,24 +74,36 @@ public class BRAVHBuildingSet {
             mGenericType = ClassName.get(locatorType);
         }
 
+        try {
+            recyclerHolder.module();
+        }catch (MirroredTypeException exception){
+            TypeMirror locatorType = exception.getTypeMirror();
+            moduleType = ClassName.get(locatorType);
+
+            if ("void".equals(moduleType.toString())) {
+                moduleType = ClassName.get(recyclerHolderType.asType());
+            }
+        }
+
         if (mIsUseDataBinding) {
             mDataBindingViewHolderClass = ClassName.get(mPackageName, recyclerHolderType.getSimpleName() + "Adapter." +
                     recyclerHolderType.getSimpleName() + "Holder");
         }
 
         if (itemResIds.length > 1) {
-            //extends from BaseMultiItemQuickAdapter
         } else if (itemResIds.length == 1) {
             //extends from BaseQuickAdapter
             mClassBuilder = TypeSpec.classBuilder(recyclerHolderType.getSimpleName() + "Adapter")
                     .addModifiers(Modifier.PUBLIC)
                     .superclass(ParameterizedTypeName.get(BASE_QUICK_ADAPTER, mGenericType, mIsUseDataBinding ? mDataBindingViewHolderClass : BASE_VIEW_HOLDER));
 
-            createField(recyclerHolderType);
-            createConstructor(recyclerHolderType, mGenericType, itemResIds[0], headerResId);
+            createField(recyclerHolderType,"mViewLayer");
+            createField(moduleType,"mModuleLayer");
+            createConstructor(recyclerHolderType, moduleType,mGenericType, itemResIds[0], headerResId);
         } else {
             throw new IllegalArgumentException("your must define least 1 items id in @RecyclerHolder(items={})");
         }
+
 
         if (mIsUseDataBinding) {
             createDataBindingMethod(recyclerHolderType);
@@ -132,17 +145,24 @@ public class BRAVHBuildingSet {
     /**
      * create field in the generate java file
      *
-     * @param recyclerHolderType
+     * @param element           注入的Element的类型
+     * @param filedName         注入fileldName
      */
-    private void createField(Element recyclerHolderType) {
-        TypeElement classElement = (TypeElement) recyclerHolderType;
+    private void createField(Element element,String filedName) {
+        TypeElement classElement = (TypeElement) element;
 
-        mClassBuilder.addField(FieldSpec.builder(ClassName.get(classElement), "mRecyclerHolder")
+        mClassBuilder.addField(FieldSpec.builder(ClassName.get(classElement), filedName)
                 .addModifiers(Modifier.PRIVATE)
                 .build());
     }
 
-    private void createConstructor(Element recyclerHolderType, TypeName genericType, int itemResId, int headerResId) {
+    private void createField(TypeName typeName,String filedName){
+        mClassBuilder.addField(FieldSpec.builder(typeName, filedName)
+                .addModifiers(Modifier.PRIVATE)
+                .build());
+    }
+
+    private void createConstructor(Element recyclerHolderType, TypeName moduleType, TypeName genericType, int itemResId, int headerResId) {
         mItemResId = itemResId;
 
         //generate constructor
@@ -150,9 +170,11 @@ public class BRAVHBuildingSet {
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(CONTEXT_CLASS, "context")
                 .addParameter(ParameterizedTypeName.get(LIST_CLASS, genericType), "data")
-                .addParameter(TypeName.get(recyclerHolderType.asType()), "recyclerHolder")
+                .addParameter(TypeName.get(recyclerHolderType.asType()), "viewLayer")
+                .addParameter(moduleType,"moduleLayer")
                 .addStatement("super($L,data)", itemResId)
-                .addStatement("this.mRecyclerHolder = recyclerHolder");
+                .addStatement("this.mViewLayer = viewLayer")
+                .addStatement("this.mModuleLayer = moduleLayer");
 
         if (headerResId != -1) {
             mConstructorBuilder.addStatement("$T headerView = $T.inflate(context,$L,null)", VIEW_CLASS, VIEW_CLASS, headerResId)
@@ -162,36 +184,33 @@ public class BRAVHBuildingSet {
 
     /**
      * in generate code bind convert method.
+     * convert method in v layer
      *
      * @param convertMethod that be @BindConvert Method Element object
      */
     public void bindConvert(Element convertMethod) {
         TypeName genericType = mGenericType;
-        MethodSpec.Builder convertBuilder;
+        MethodSpec.Builder convertBuilder = MethodSpec.methodBuilder("convert")
+                .returns(void.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class);
+
         if (!mIsUseDataBinding) {
-            convertBuilder = MethodSpec.methodBuilder("convert")
-                    .returns(void.class)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addAnnotation(Override.class)
-                    .addParameter(BASE_VIEW_HOLDER, "helper")
-                    .addParameter(genericType, "item")
-                    .addStatement("mRecyclerHolder.$N(helper,item)", convertMethod.getSimpleName().toString());
+            convertBuilder.addParameter(ClassUtil.BASE_VIEW_HOLDER, "helper")
+                    .addStatement("mViewLayer.$N(helper,item,helper.getLayoutPosition())", convertMethod.getSimpleName().toString());
         } else {
-            convertBuilder = MethodSpec.methodBuilder("convert")
-                    .returns(void.class)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addAnnotation(Override.class)
-                    .addParameter(mDataBindingViewHolderClass, "helper")
-                    .addParameter(genericType, "item")
+            convertBuilder.addParameter(mDataBindingViewHolderClass, "helper")
                     .addStatement("ViewDataBinding binding = helper.getBinding()")
-                    .addStatement("mRecyclerHolder.$N(binding,item)", convertMethod.getSimpleName().toString());
+                    .addStatement("mViewLayer.$N(binding,item,helper.getLayoutPosition())", convertMethod.getSimpleName().toString());
         }
 
-        mClassBuilder.addMethod(convertBuilder.build());
+        mClassBuilder.addMethod(convertBuilder.addParameter(genericType, "item")
+                .build());
     }
 
     /**
      * in generate code bind onLoadMoreRequest method
+     * loadMoreRequest in M layer
      *
      * @param loadMoreMethod
      */
@@ -201,7 +220,7 @@ public class BRAVHBuildingSet {
         mClassBuilder.addMethod(MethodSpec.methodBuilder("onLoadMore")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(void.class)
-                .addStatement("mRecyclerHolder.$N()", loadMoreMethod.getSimpleName().toString()).build());
+                .addStatement("mModuleLayer.$N()", loadMoreMethod.getSimpleName().toString()).build());
     }
 
     public void bindInjectAdapter(Element injectFiled) {
@@ -209,8 +228,7 @@ public class BRAVHBuildingSet {
             throw new IllegalArgumentException(injectFiled.getSimpleName() + "can't set private,please use default or public");
         }
 
-        mConstructorBuilder.addStatement("recyclerHolder.$N = this", injectFiled.getSimpleName().toString());
-
+        mConstructorBuilder.addStatement("mViewLayer.$N = this", injectFiled.getSimpleName().toString());
     }
 
     public void bindInjectLoadMore(Element injectFiled) {
@@ -222,7 +240,8 @@ public class BRAVHBuildingSet {
                 .addParameter(LoadMoreAble.class, "loadMoreAble")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
-                .addStatement("mRecyclerHolder.$N = loadMoreAble", injectFiled.getSimpleName().toString())
+                .addStatement("mModuleLayer.$N = loadMoreAble",
+                         injectFiled.getSimpleName().toString())
                 .returns(void.class).build());
     }
 

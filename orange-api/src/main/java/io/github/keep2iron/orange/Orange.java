@@ -30,12 +30,27 @@ public class Orange {
     private final static Map<Class, Constructor<? extends OnRefresh>> REFRESH_BINDER = new HashMap<>();
 
 
+//    public static <T> void inject(@NonNull final OrangeOptions<T> options,
+//                                  @NonNull Object viewLayer){
+//        inject(options,viewLayer,viewLayer);
+//    }
+
+    /**
+     * 将代码注入到adapterHolder中
+     *
+     * @param options
+     * @param viewObj 创建出的Adapter的持有者对象
+     * @param <T>
+     */
     public static <T> void inject(@NonNull final OrangeOptions<T> options,
-                                  @NonNull Object holder) {
+                                  @NonNull Object viewObj) {
+        //viewModule是注入LoadMoreAble和RefreshAble对象的一个注入对象
+        Object moduleObj = options.mModule;
+
         ProxyRefreshListener proxyListener = new ProxyRefreshListener();
 
-        BaseQuickAdapter<T, ? extends BaseViewHolder> recyclerAdapter = createRecyclerAdapter(options, holder);
-        OnRefresh onRefreshItem = bindRefreshInstance(options, holder, proxyListener);
+        BaseQuickAdapter<T, ? extends BaseViewHolder> recyclerAdapter = createRecyclerAdapter(options, viewObj,moduleObj);
+        OnRefresh onRefreshItem = bindRefreshInstance(options, viewObj, moduleObj,proxyListener);
 
         //set listener
         RecyclerView recyclerView = options.recyclerView;
@@ -67,9 +82,9 @@ public class Orange {
         }
     }
 
-    private static <T> OnRefresh bindRefreshInstance(@NonNull OrangeOptions<T> options, Object obj, ProxyRefreshListener proxyListener) {
+    private static <T> OnRefresh bindRefreshInstance(@NonNull OrangeOptions<T> options, Object viewObj, Object moduleObj, ProxyRefreshListener proxyListener) {
 
-        Constructor<? extends OnRefresh> constructor = loadRefreshableAdapterConstructor(obj);
+        Constructor<? extends OnRefresh> constructor = loadRefreshableAdapterConstructor(viewObj,moduleObj);
 
         options.isRefresh = (constructor != null);
         //改模块并不存在刷新操作
@@ -95,7 +110,7 @@ public class Orange {
 
         OnRefresh onRefreshItem = null;
         try {
-            onRefreshItem = constructor.newInstance(obj, refreshView, listener);
+            onRefreshItem = constructor.newInstance(viewObj, moduleObj,refreshView, listener);
             proxyListener.setOnRefreshItem(onRefreshItem);
         } catch (InstantiationException e) {
             e.printStackTrace();
@@ -122,10 +137,10 @@ public class Orange {
     }
 
 
-    private static <T> BaseQuickAdapter<T, ? extends BaseViewHolder> createRecyclerAdapter(@NonNull OrangeOptions<T> options, Object obj) {
+    private static <T> BaseQuickAdapter<T, ? extends BaseViewHolder> createRecyclerAdapter(@NonNull OrangeOptions<T> options, Object viewObj, Object moduleObj) {
         options.checkValueWhenCrateRecyclerAdapter();
 
-        Constructor<? extends BaseQuickAdapter> constructor = loadBRAVHAdapterConstructor(obj);
+        Constructor<? extends BaseQuickAdapter> constructor = loadBRAVHAdapterConstructor(viewObj,moduleObj);
 
         if (constructor == null) {
             throw new IllegalArgumentException("can't find recycler adapter class...");
@@ -136,7 +151,7 @@ public class Orange {
         BaseQuickAdapter<T, ? extends BaseViewHolder> baseQuickAdapter = null;
 
         try {
-            baseQuickAdapter = constructor.newInstance(ctx, options.data, obj);
+            baseQuickAdapter = constructor.newInstance(ctx, options.data, viewObj,moduleObj);
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
@@ -154,19 +169,21 @@ public class Orange {
         return baseQuickAdapter;
     }
 
-    private static Constructor<? extends OnRefresh> loadRefreshableAdapterConstructor(Object object) {
-        Class<?> clazz = object.getClass();
-        Constructor<? extends OnRefresh> constructor = REFRESH_BINDER.get(clazz);
+    private static Constructor<? extends OnRefresh> loadRefreshableAdapterConstructor(Object viewObj, Object moduleObj) {
+        Class<?> viewClass = viewObj.getClass();
+        Class<?> moduleClass = moduleObj.getClass();
+
+        Constructor<? extends OnRefresh> constructor = REFRESH_BINDER.get(viewClass);
         if (constructor != null) {
             return constructor;
         }
 
-        String clsName = clazz.getName();
+        String clsName = viewClass.getName();
 
         try {
             Class<? extends OnRefresh> bindingClass = (Class<? extends OnRefresh>) Class.forName(clsName + "RefreshAdapter");
-            constructor = bindingClass.getConstructor(clazz, View.class, Object.class);
-            REFRESH_BINDER.put(clazz, constructor);
+            constructor = bindingClass.getConstructor(viewClass, moduleClass,View.class, Object.class);
+            REFRESH_BINDER.put(viewClass, constructor);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
@@ -175,22 +192,25 @@ public class Orange {
         return constructor;
     }
 
-    private static Constructor<? extends BaseQuickAdapter> loadBRAVHAdapterConstructor(Object object) {
-        Class<?> clazz = object.getClass();
-        Constructor<? extends BaseQuickAdapter> constructor = BRAVH_BINDER.get(clazz);
+    private static Constructor<? extends BaseQuickAdapter> loadBRAVHAdapterConstructor(Object viewObj, Object moduleObj) {
+        Class<?> viewClass = viewObj.getClass();
+        Class<?> moduleClass = moduleObj.getClass();
+        Constructor<? extends BaseQuickAdapter> constructor = BRAVH_BINDER.get(viewClass);
         if (constructor != null) {
             return constructor;
         }
 
-        String clsName = clazz.getName();
+        String clsName = viewClass.getName();
         try {
             Class<? extends BaseQuickAdapter> bindingClass = (Class<? extends BaseQuickAdapter>) Class.forName(clsName + "Adapter");
-            constructor = bindingClass.getConstructor(Context.class, List.class, clazz);
-            BRAVH_BINDER.put(clazz, constructor);
+            constructor = bindingClass.getConstructor(Context.class, List.class, viewClass,moduleClass);
+            BRAVH_BINDER.put(viewClass, constructor);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            throw new IllegalArgumentException("@RecyclerHolder's module class \n" +
+                    "isn't match OrangeOptions's module class," +
+                    "your should set @RecyclerHolder module");
         }
         return constructor;
     }

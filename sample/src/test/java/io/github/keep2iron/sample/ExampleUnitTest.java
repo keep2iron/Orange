@@ -1,4 +1,4 @@
-package io.github.keep2iron.finishadpter;
+package io.github.keep2iron.sample;
 
 import org.junit.Test;
 

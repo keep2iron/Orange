@@ -1,6 +1,8 @@
 package io.github.keep2iron.orange.processor;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.TypeName;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -18,6 +20,8 @@ import javax.inject.Inject;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
@@ -140,7 +144,7 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
             TypeElement classFile = (TypeElement) ele.getEnclosingElement();
             BRAVHBuildingSet buildingSet = mBuildingMap.get(classFile.getQualifiedName().toString());
             if (buildingSet == null) {
-                throw new IllegalArgumentException("don't find class annotation @RecyclerHolder mapping");
+                throw new IllegalArgumentException("@RecyclerHolder don't include @BindConvert element,please add @BindConvert on a method");
             }
             buildingSet.bindConvert(ele);
         }
@@ -151,6 +155,20 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
         for (Element ele : recyclerHolderElements) {
             TypeElement classFile = (TypeElement) ele;
             BRAVHBuildingSet buildingSet = new BRAVHBuildingSet(ele);
+
+            RecyclerHolder recyclerHolder = ele.getAnnotation(RecyclerHolder.class);
+            TypeName moduleType = null;
+            try {
+                ClassName.get(recyclerHolder.module());
+            }catch (MirroredTypeException exception){
+                TypeMirror locatorType = exception.getTypeMirror();
+                moduleType = ClassName.get(locatorType);
+            }
+
+            if(!"void".equals(moduleType.toString())){
+                mBuildingMap.put(moduleType.toString(),buildingSet);
+            }
+
             mBuildingMap.put(classFile.getQualifiedName().toString(), buildingSet);
         }
     }

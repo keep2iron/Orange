@@ -5,6 +5,8 @@ import android.view.ViewGroup;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 
+import io.github.keep2iron.orange.OrangeOptions;
+import io.github.keep2iron.orange.RefreshViewAdapter;
 import io.github.keep2iron.orange.annotations.Refreshable;
 
 /**

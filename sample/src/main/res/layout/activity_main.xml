@@ -2,7 +2,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="io.github.keep2iron.finishadpter.MainActivity">
+    tools:context="io.github.keep2iron.sample.MainActivity">
 
     <data>
 
@@ -10,7 +10,7 @@
 
         <variable
             name="viewModule"
-            type="io.github.keep2iron.finishadpter.RecyclerModule" />
+            type="io.github.keep2iron.sample.RecyclerModule" />
     </data>
 
     <android.support.constraint.ConstraintLayout

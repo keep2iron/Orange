@@ -1,7 +1,6 @@
-package io.github.keep2iron.finishadpter;
+package io.github.keep2iron.sample.repository;
 
 import android.os.Handler;
-import android.os.Message;
 
 import java.util.ArrayList;
 import java.util.List;

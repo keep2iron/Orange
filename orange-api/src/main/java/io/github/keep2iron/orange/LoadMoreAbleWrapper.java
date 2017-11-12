@@ -3,6 +3,8 @@ package io.github.keep2iron.orange;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 
+import io.github.keep2iron.orange.OrangeOptions;
+import io.github.keep2iron.orange.RefreshViewAdapter;
 import io.github.keep2iron.orange.annotations.LoadMoreAble;
 
 /**

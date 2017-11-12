@@ -16,6 +16,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE)
 public @interface RecyclerHolder {
+
     Class<?> type();
 
     @LayoutRes int[] items();
@@ -23,4 +24,6 @@ public @interface RecyclerHolder {
     @LayoutRes int header() default -1;
 
     boolean isUseDataBinding() default false;
+
+    Class<?> module() default void.class;
 }
