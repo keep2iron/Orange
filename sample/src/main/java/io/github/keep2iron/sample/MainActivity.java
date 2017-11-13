@@ -3,11 +3,16 @@ package io.github.keep2iron.sample;
 import android.databinding.DataBindingUtil;
 import android.databinding.ObservableArrayList;
 import android.databinding.ViewDataBinding;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
+
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -23,8 +28,8 @@ import io.github.keep2iron.sample.databinding.ItemDefaultBinding;
  */
 @RecyclerHolder(type = String.class,
         items = {R.layout.item_default},
-        isUseDataBinding = true,
-        module = RecyclerModule.class
+        module = RecyclerModule.class,
+        isUseDataBinding = true
 )
 public class MainActivity extends AppCompatActivity {
 

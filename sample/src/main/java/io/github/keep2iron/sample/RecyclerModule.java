@@ -20,12 +20,11 @@ import io.github.keep2iron.sample.repository.DataServer;
  */
 public class RecyclerModule {
 
-//    @Inject
-//    Refreshable mRefreshable;
+    @Inject
+    Refreshable mRefreshable;
 
     @Inject
     LoadMoreAble mLoadMoreAble;
-
 
     public ObservableArrayList<String> mData;
 
@@ -43,7 +42,7 @@ public class RecyclerModule {
         DataServer.httpData(new DataServer.Callback<String>() {
             @Override
             public void onSuccess(List<String> list) {
-                Log.e("test","加载更多的次数为 : " + (loadMoreCount++));
+                Log.e("test", "加载更多的次数为 : " + (loadMoreCount++));
 
 
                 mData.addAll(list);
@@ -59,23 +58,23 @@ public class RecyclerModule {
 
     int refreshCount = 1;
 
-//    @BindOnRefresh
-//    public void onRefresh() {
-//        DataServer.httpData(new DataServer.Callback<String>() {
-//            @Override
-//            public void onSuccess(List<String> list) {
-//
-//                Log.e("test","刷新的次数为 : " + (refreshCount++));
-//
-//                mData.clear();
-//                mData.addAll(list);
-//                mRefreshable.showRefreshComplete();
-//            }
+    @BindOnRefresh
+    public void onRefresh() {
+        DataServer.httpData(new DataServer.Callback<String>() {
+            @Override
+            public void onSuccess(List<String> list) {
 
-//            @Override
-//            public void onError() {
-//
-//            }
-//        });
-//    }
+                Log.e("test", "刷新的次数为 : " + (refreshCount++));
+
+                mData.clear();
+                mData.addAll(list);
+                mRefreshable.showRefreshComplete();
+            }
+
+            @Override
+            public void onError() {
+
+            }
+        });
+    }
 }

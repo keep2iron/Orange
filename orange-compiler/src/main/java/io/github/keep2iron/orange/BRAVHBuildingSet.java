@@ -49,6 +49,11 @@ public class BRAVHBuildingSet {
      * adapter 构造方法的构造器
      */
     private MethodSpec.Builder mConstructorBuilder;
+    /**
+     * OnLoadMore中的 setLoadMoreHolder的重写方法
+     */
+    private MethodSpec.Builder mSetLoadMoreHolderMethod;
+
 
     private String mPackageName;
     private int mItemResId;
@@ -76,7 +81,7 @@ public class BRAVHBuildingSet {
 
         try {
             recyclerHolder.module();
-        }catch (MirroredTypeException exception){
+        } catch (MirroredTypeException exception) {
             TypeMirror locatorType = exception.getTypeMirror();
             moduleType = ClassName.get(locatorType);
 
@@ -97,9 +102,9 @@ public class BRAVHBuildingSet {
                     .addModifiers(Modifier.PUBLIC)
                     .superclass(ParameterizedTypeName.get(BASE_QUICK_ADAPTER, mGenericType, mIsUseDataBinding ? mDataBindingViewHolderClass : BASE_VIEW_HOLDER));
 
-            createField(recyclerHolderType,"mViewLayer");
-            createField(moduleType,"mModuleLayer");
-            createConstructor(recyclerHolderType, moduleType,mGenericType, itemResIds[0], headerResId);
+            createField(recyclerHolderType, "mViewLayer");
+            createField(moduleType, "mModuleLayer");
+            createConstructor(recyclerHolderType, moduleType, mGenericType, itemResIds[0], headerResId);
         } else {
             throw new IllegalArgumentException("your must define least 1 items id in @RecyclerHolder(items={})");
         }
@@ -145,10 +150,10 @@ public class BRAVHBuildingSet {
     /**
      * create field in the generate java file
      *
-     * @param element           注入的Element的类型
-     * @param filedName         注入fileldName
+     * @param element   注入的Element的类型
+     * @param filedName 注入fileldName
      */
-    private void createField(Element element,String filedName) {
+    private void createField(Element element, String filedName) {
         TypeElement classElement = (TypeElement) element;
 
         mClassBuilder.addField(FieldSpec.builder(ClassName.get(classElement), filedName)
@@ -156,7 +161,7 @@ public class BRAVHBuildingSet {
                 .build());
     }
 
-    private void createField(TypeName typeName,String filedName){
+    private void createField(TypeName typeName, String filedName) {
         mClassBuilder.addField(FieldSpec.builder(typeName, filedName)
                 .addModifiers(Modifier.PRIVATE)
                 .build());
@@ -171,7 +176,7 @@ public class BRAVHBuildingSet {
                 .addParameter(CONTEXT_CLASS, "context")
                 .addParameter(ParameterizedTypeName.get(LIST_CLASS, genericType), "data")
                 .addParameter(TypeName.get(recyclerHolderType.asType()), "viewLayer")
-                .addParameter(moduleType,"moduleLayer")
+                .addParameter(moduleType, "moduleLayer")
                 .addStatement("super($L,data)", itemResId)
                 .addStatement("this.mViewLayer = viewLayer")
                 .addStatement("this.mModuleLayer = moduleLayer");
@@ -221,6 +226,12 @@ public class BRAVHBuildingSet {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(void.class)
                 .addStatement("mModuleLayer.$N()", loadMoreMethod.getSimpleName().toString()).build());
+
+        mSetLoadMoreHolderMethod = MethodSpec.methodBuilder("setLoadMoreAbleWithHolder")
+                .addParameter(LoadMoreAble.class, "loadMoreAble")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(void.class);
     }
 
     public void bindInjectAdapter(Element injectFiled) {
@@ -236,19 +247,21 @@ public class BRAVHBuildingSet {
             throw new IllegalArgumentException(injectFiled.getSimpleName() + "can't set private,please use default or public");
         }
 
-        mClassBuilder.addMethod(MethodSpec.methodBuilder("setLoadMoreAbleWithHolder")
-                .addParameter(LoadMoreAble.class, "loadMoreAble")
-                .addAnnotation(Override.class)
-                .addModifiers(Modifier.PUBLIC)
-                .addStatement("mModuleLayer.$N = loadMoreAble",
-                         injectFiled.getSimpleName().toString())
-                .returns(void.class).build());
+        //如果没有继承OnLoadMore接口，那么不必要进行添加代码块了
+        if(mSetLoadMoreHolderMethod != null) {
+            mSetLoadMoreHolderMethod.addStatement("mModuleLayer.$N = loadMoreAble",
+                    injectFiled.getSimpleName().toString());
+        }
     }
 
     /**
      * generate file
      */
     public void build(Filer filer) {
+        //当Module中没有BindLoadMore注解时，mSetLoadMoreHolderMethod为空
+        if(mSetLoadMoreHolderMethod != null) {
+            mClassBuilder.addMethod(mSetLoadMoreHolderMethod.build());
+        }
         mClassBuilder.addMethod(mConstructorBuilder.build());
 
         try {
