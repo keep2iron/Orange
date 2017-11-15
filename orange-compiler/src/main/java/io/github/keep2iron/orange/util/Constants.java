@@ -13,4 +13,5 @@ public interface Constants {
     int COMPILER_OPTIONS_SIZE = 3;
 
     String DEFAULT_CLASS = void.class.getSimpleName();
+    String PREFIX_OF_LOGGER = "Orange Compiler      ->      ";
 }

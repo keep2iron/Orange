@@ -31,6 +31,7 @@ import io.github.keep2iron.orange.annotations.BindOnLoadMore;
 import io.github.keep2iron.orange.annotations.LoadMoreAble;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
 import io.github.keep2iron.orange.util.ClassUtil;
+import io.github.keep2iron.orange.util.Logger;
 
 /**
  * @author keep2iron <a href="http://keep2iron.github.io">Contract me.</a>
@@ -63,10 +64,9 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
      */
     private Filer mFiler;
 
-    /**
-     *
-     */
     Types mTypeUtils;
+
+    private Logger mLogger;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnvironment) {
@@ -77,6 +77,9 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
         mTypeUtils = processingEnvironment.getTypeUtils();
         mFiler = processingEnvironment.getFiler();
         mBuildingMap = new ConcurrentHashMap<>(50);
+
+        // Package the log utils.
+        mLogger = new Logger(processingEnv.getMessager());
     }
 
     @Override
@@ -108,6 +111,8 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
         Set<? extends Element> injectElements = roundEnvironment.getElementsAnnotatedWith(Inject.class);
         if (injectElements != null && injectElements.size() != 0) {
             for (Element ele : injectElements) {
+                mLogger.info("bind      '" + ele.getSimpleName() + "'     inject");
+
                 TypeElement classFile = (TypeElement) ele.getEnclosingElement();
                 BRAVHBuildingSet buildingSet = mBuildingMap.get(classFile.getQualifiedName().toString());
                 if (buildingSet != null) {
@@ -125,6 +130,8 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
         Set<? extends Element> loadElements = roundEnvironment.getElementsAnnotatedWith(BindOnLoadMore.class);
         if (loadElements != null && loadElements.size() != 0) {
             for (Element ele : loadElements) {
+                mLogger.info("bind      '" + ele.getSimpleName() + "'     loadMore");
+
                 TypeElement classFile = (TypeElement) ele.getEnclosingElement();
                 BRAVHBuildingSet buildingSet = mBuildingMap.get(classFile.getQualifiedName().toString());
                 if (buildingSet != null) {
@@ -137,10 +144,9 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
 
     private void bindConvert(RoundEnvironment roundEnvironment) {
         Set<? extends Element> convertElements = roundEnvironment.getElementsAnnotatedWith(BindConvert.class);
-        if (convertElements == null || convertElements.size() == 0) {
-            throw new IllegalArgumentException("your must define @BindConvert in your java file");
-        }
         for (Element ele : convertElements) {
+            mLogger.info("bind      '" + ele.getSimpleName() + "'     Convert");
+
             TypeElement classFile = (TypeElement) ele.getEnclosingElement();
             BRAVHBuildingSet buildingSet = mBuildingMap.get(classFile.getQualifiedName().toString());
             if (buildingSet == null) {
@@ -153,6 +159,8 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
     private void bindRecyclerHolder(RoundEnvironment roundEnvironment) {
         Set<? extends Element> recyclerHolderElements = roundEnvironment.getElementsAnnotatedWith(RecyclerHolder.class);
         for (Element ele : recyclerHolderElements) {
+            mLogger.info("bind      '" + ele.getSimpleName() + "'     RecyclerHolder");
+
             TypeElement classFile = (TypeElement) ele;
             BRAVHBuildingSet buildingSet = new BRAVHBuildingSet(ele);
 
