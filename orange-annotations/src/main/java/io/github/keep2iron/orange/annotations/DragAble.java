@@ -6,11 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author keep2iron <a href="http://keep2iron.github.io">Contract me.</a>
- * @version 1.0
- * @since 2017/11/06 18:48
+ * Created by keep-iron on 17-11-18.
  */
 @Retention(RetentionPolicy.CLASS)
-@Target(ElementType.METHOD)
-public @interface BindOnItemClick {
+@Target(ElementType.TYPE)
+public @interface DragAble {
+
+    int flag() default -1;
+
 }

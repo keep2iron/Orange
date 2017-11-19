@@ -3,7 +3,6 @@ package io.github.keep2iron.orange;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.view.View;
 import android.view.ViewGroup;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
@@ -16,8 +15,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.github.keep2iron.orange.annotations.OnLoadMore;
-import io.github.keep2iron.orange.annotations.OnRefresh;
+import io.github.keep2iron.orange.annotations.intrnal.IModuleClass;
+import io.github.keep2iron.orange.annotations.intrnal.OnLoadMore;
+import io.github.keep2iron.orange.annotations.intrnal.OnRefresh;
+import io.github.keep2iron.orange.annotations.intrnal.OnSwipeOrDrag;
 import io.github.keep2iron.orange.api.R;
 
 /**
@@ -29,11 +30,6 @@ public class Orange {
     private final static Map<Class, Constructor<? extends BaseQuickAdapter>> BRAVH_BINDER = new HashMap<>();
     private final static Map<Class, Constructor<? extends OnRefresh>> REFRESH_BINDER = new HashMap<>();
 
-
-//    public static <T> void inject(@NonNull final OrangeOptions<T> options,
-//                                  @NonNull Object viewLayer){
-//        inject(options,viewLayer,viewLayer);
-//    }
 
     /**
      * 将代码注入到adapterHolder中
@@ -50,7 +46,7 @@ public class Orange {
         ProxyRefreshListener proxyListener = new ProxyRefreshListener();
 
         BaseQuickAdapter<T, ? extends BaseViewHolder> recyclerAdapter = createRecyclerAdapter(options, viewObj,moduleObj);
-        OnRefresh onRefreshItem = bindRefreshInstance(options, viewObj, moduleObj,proxyListener);
+        OnRefresh onRefreshItem = bindRefreshInstance(recyclerAdapter,options, viewObj, moduleObj,proxyListener);
 
         //set listener
         RecyclerView recyclerView = options.recyclerView;
@@ -76,15 +72,19 @@ public class Orange {
             onRefreshItem.setRefreshableWithHolder(new RefreshableWrapper(options.refreshAdapter, recyclerAdapter, options));
         }
 
-        if (options.layoutManager != null) {
-            recyclerView.setLayoutManager(options.layoutManager);
-            recyclerView.setAdapter(recyclerAdapter);
+        if(options.isDragOrSwipe){
+            OnSwipeOrDrag<RecyclerView> onSwipeOrDrag = (OnSwipeOrDrag<RecyclerView>)recyclerAdapter;
+            onSwipeOrDrag.attachRecyclerView(options.recyclerView,options.mOnItemDragListener,options.mOnItemSwipeListener);
         }
     }
 
-    private static <T> OnRefresh bindRefreshInstance(@NonNull OrangeOptions<T> options, Object viewObj, Object moduleObj, ProxyRefreshListener proxyListener) {
+    private static <T> OnRefresh bindRefreshInstance(BaseQuickAdapter<T, ? extends BaseViewHolder> adapter,
+                                                     @NonNull OrangeOptions<T> options,
+                                                     Object viewObj,
+                                                     Object moduleObj,
+                                                     ProxyRefreshListener proxyListener) {
 
-        Constructor<? extends OnRefresh> constructor = loadRefreshableAdapterConstructor(viewObj,moduleObj);
+        Constructor<? extends OnRefresh> constructor = loadRefreshableAdapterConstructor(adapter,viewObj,moduleObj);
 
         options.isRefresh = (constructor != null);
         //改模块并不存在刷新操作
@@ -110,8 +110,9 @@ public class Orange {
 
         OnRefresh onRefreshItem = null;
         try {
-            onRefreshItem = constructor.newInstance(viewObj, moduleObj,refreshView, listener);
+            onRefreshItem = constructor.newInstance(viewObj, moduleObj);
             proxyListener.setOnRefreshItem(onRefreshItem);
+            onRefreshItem.setRefreshListener(refreshView, listener);
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
@@ -147,7 +148,6 @@ public class Orange {
         }
 
         Context ctx = options.context.getApplicationContext();
-        RecyclerView recyclerView = options.recyclerView;
         BaseQuickAdapter<T, ? extends BaseViewHolder> baseQuickAdapter = null;
 
         try {
@@ -165,11 +165,14 @@ public class Orange {
         }
 
         options.isLoadMore = (baseQuickAdapter instanceof OnLoadMore);
+        options.isDragOrSwipe = (baseQuickAdapter instanceof OnSwipeOrDrag);
 
         return baseQuickAdapter;
     }
 
-    private static Constructor<? extends OnRefresh> loadRefreshableAdapterConstructor(Object viewObj, Object moduleObj) {
+    private static <T> Constructor<? extends OnRefresh> loadRefreshableAdapterConstructor(BaseQuickAdapter<T, ? extends BaseViewHolder> adapter,
+                                                                                          Object viewObj,
+                                                                                          Object moduleObj) {
         Class<?> viewClass = viewObj.getClass();
         Class<?> moduleClass = moduleObj.getClass();
 
@@ -178,11 +181,10 @@ public class Orange {
             return constructor;
         }
 
-        String clsName = viewClass.getName();
-
+        IModuleClass iModuleClass = (IModuleClass) adapter;
         try {
-            Class<? extends OnRefresh> bindingClass = (Class<? extends OnRefresh>) Class.forName(clsName + "RefreshAdapter");
-            constructor = bindingClass.getConstructor(viewClass, moduleClass,View.class, Object.class);
+            Class<? extends OnRefresh> bindingClass = (Class<? extends OnRefresh>) Class.forName(iModuleClass.getRefreshModuleAdapterClassName());
+            constructor = bindingClass.getConstructor(viewClass, moduleClass);
             REFRESH_BINDER.put(viewClass, constructor);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();

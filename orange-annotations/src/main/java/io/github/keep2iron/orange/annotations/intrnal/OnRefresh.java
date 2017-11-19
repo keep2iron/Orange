@@ -1,4 +1,6 @@
-package io.github.keep2iron.orange.annotations;
+package io.github.keep2iron.orange.annotations.intrnal;
+
+import io.github.keep2iron.orange.annotations.extra.Refreshable;
 
 /**
  * @author keep2iron <a href="http://keep2iron.github.io">Contract me.</a>
@@ -18,4 +20,6 @@ public interface OnRefresh {
      * @param refreshable 提供刷新操作类
      */
     void setRefreshableWithHolder(Refreshable refreshable);
+
+    void setRefreshListener(Object view,Object refreshListener);
 }

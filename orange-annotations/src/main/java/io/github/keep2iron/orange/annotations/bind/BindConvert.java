@@ -1,4 +1,4 @@
-package io.github.keep2iron.orange.annotations;
+package io.github.keep2iron.orange.annotations.bind;
 
 import android.support.annotation.LayoutRes;
 
@@ -10,20 +10,11 @@ import java.lang.annotation.Target;
 /**
  * @author keep2iron <a href="http://keep2iron.github.io">Contract me.</a>
  * @version 1.0
- * @since 2017/11/04 22:57
+ * @since 2017/11/05 12:43
  *
+ * 绑定Convert方法
  */
 @Retention(RetentionPolicy.CLASS)
-@Target(ElementType.TYPE)
-public @interface RecyclerHolder {
-
-    Class<?> type();
-
-    @LayoutRes int[] items();
-
-    @LayoutRes int header() default -1;
-
-    boolean isUseDataBinding() default false;
-
-    Class<?> module();
+@Target(ElementType.METHOD)
+public @interface BindConvert {
 }

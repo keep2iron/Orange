@@ -1,16 +1,20 @@
 package io.github.keep2iron.sample;
 
 import android.databinding.ObservableArrayList;
+import android.databinding.ObservableList;
 import android.util.Log;
+
+import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.chad.library.adapter.base.BaseViewHolder;
 
 import java.util.List;
 
 import javax.inject.Inject;
 
-import io.github.keep2iron.orange.annotations.BindOnLoadMore;
-import io.github.keep2iron.orange.annotations.BindOnRefresh;
-import io.github.keep2iron.orange.annotations.LoadMoreAble;
-import io.github.keep2iron.orange.annotations.Refreshable;
+import io.github.keep2iron.orange.annotations.bind.BindOnLoadMore;
+import io.github.keep2iron.orange.annotations.bind.BindOnRefresh;
+import io.github.keep2iron.orange.annotations.extra.LoadMoreAble;
+import io.github.keep2iron.orange.annotations.extra.Refreshable;
 import io.github.keep2iron.sample.repository.DataServer;
 
 /**
@@ -26,7 +30,10 @@ public class RecyclerModule {
     @Inject
     LoadMoreAble mLoadMoreAble;
 
-    public ObservableArrayList<String> mData;
+    @Inject
+    public BaseQuickAdapter<String, ? extends BaseViewHolder> mAdapter;
+
+    public ObservableList<String> mData;
 
     public RecyclerModule() {
         mData = new ObservableArrayList<>();
@@ -47,6 +54,7 @@ public class RecyclerModule {
 
                 mData.addAll(list);
                 mLoadMoreAble.showLoadMoreComplete();
+                mAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -69,6 +77,7 @@ public class RecyclerModule {
                 mData.clear();
                 mData.addAll(list);
                 mRefreshable.showRefreshComplete();
+                mAdapter.notifyDataSetChanged();
             }
 
             @Override

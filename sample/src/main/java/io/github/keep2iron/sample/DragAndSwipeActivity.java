@@ -4,32 +4,23 @@ import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.RecyclerView;
-
-import com.chad.library.adapter.base.BaseQuickAdapter;
-import com.chad.library.adapter.base.BaseViewHolder;
-
-import javax.inject.Inject;
-
 import io.github.keep2iron.orange.Orange;
 import io.github.keep2iron.orange.OrangeOptions;
-import io.github.keep2iron.orange.annotations.bind.BindConvert;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
-import io.github.keep2iron.sample.databinding.ItemDefaultBinding;
+import io.github.keep2iron.orange.annotations.SwipeAble;
+import io.github.keep2iron.orange.annotations.bind.BindConvert;
+import io.github.keep2iron.sample.databinding.ItemDragBinding;
 import io.github.keep2iron.sample.databinding.RecyclerViewBinding;
 
-/**
- * @author keep2iron
- */
+
+//@DragAble
+@SwipeAble
 @RecyclerHolder(type = String.class,
-        items = {R.layout.item_default},
+        items = {R.layout.item_drag},
         module = RecyclerModule.class,
         isUseDataBinding = true
 )
-public class MainActivity extends AppCompatActivity {
-
-    @Inject
-    BaseQuickAdapter<String, ? extends BaseViewHolder> mAdapter;
+public class DragAndSwipeActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +40,19 @@ public class MainActivity extends AppCompatActivity {
 
     @BindConvert
     public void render(ViewDataBinding binding, String item, int layoutPosition) {
-        ItemDefaultBinding itemBinding = (ItemDefaultBinding) binding;
-        itemBinding.itemText.setText(item);
+        ItemDragBinding itemBinding = (ItemDragBinding) binding;
+        switch (layoutPosition %
+                3) {
+            case 0:
+                itemBinding.ivHead.setImageResource(R.mipmap.head_img0);
+                break;
+            case 1:
+                itemBinding.ivHead.setImageResource(R.mipmap.head_img1);
+                break;
+            case 2:
+                itemBinding.ivHead.setImageResource(R.mipmap.head_img2);
+                break;
+        }
+        itemBinding.tv.setText(item);
     }
 }

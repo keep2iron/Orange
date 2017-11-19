@@ -14,7 +14,6 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.inject.Inject;
 import javax.lang.model.SourceVersion;
@@ -26,9 +25,9 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
 import io.github.keep2iron.orange.BRAVHBuildingSet;
-import io.github.keep2iron.orange.annotations.BindConvert;
-import io.github.keep2iron.orange.annotations.BindOnLoadMore;
-import io.github.keep2iron.orange.annotations.LoadMoreAble;
+import io.github.keep2iron.orange.annotations.bind.BindConvert;
+import io.github.keep2iron.orange.annotations.bind.BindOnLoadMore;
+import io.github.keep2iron.orange.annotations.extra.LoadMoreAble;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
 import io.github.keep2iron.orange.util.ClassUtil;
 import io.github.keep2iron.orange.util.Logger;
@@ -39,13 +38,6 @@ import io.github.keep2iron.orange.util.Logger;
  * @since 2017/11/04 21:46
  */
 @AutoService(Processor.class)
-@SupportedAnnotationTypes({
-        "io.github.keep2iron.orange.annotations.RecyclerHolder",
-        "io.github.keep2iron.orange.annotations.BindConvert",
-        "io.github.keep2iron.orange.annotations.BindOnLoadMore",
-        "io.github.keep2iron.orange.annotations.BindOnRefresh",
-        "javax.inject.Inject"
-})
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
 public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
 
@@ -80,6 +72,8 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
 
         // Package the log utils.
         mLogger = new Logger(processingEnv.getMessager());
+
+        ClassUtil.init(mElementUtils,mTypeUtils);
     }
 
     @Override
@@ -88,8 +82,10 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
             return true;
         }
 
-        //bind @RecyclerHolder class
-        bindRecyclerHolder(roundEnvironment);
+        //bind @RecyclerHolder
+        //bind @SwipeAble
+        //bind @DragAble
+        bindClassAnnotation(roundEnvironment);
 
         //bind @BindConvert method
         bindConvert(roundEnvironment);
@@ -114,12 +110,26 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
                 mLogger.info("bind      '" + ele.getSimpleName() + "'     inject");
 
                 TypeElement classFile = (TypeElement) ele.getEnclosingElement();
-                BRAVHBuildingSet buildingSet = mBuildingMap.get(classFile.getQualifiedName().toString());
+                String fullName = classFile.getQualifiedName().toString();
+
+                BRAVHBuildingSet buildingSet = mBuildingMap.get(fullName);
                 if (buildingSet != null) {
                     if (ele.asType().toString().contains(ClassUtil.BASE_QUICK_ADAPTER.toString())) {
                         buildingSet.bindInjectAdapter(ele);
                     } else if (ele.asType().toString().equals(LoadMoreAble.class.getName())) {
                         buildingSet.bindInjectLoadMore(ele);
+                    }
+                }
+
+                for(Map.Entry<String,BRAVHBuildingSet> entry : mBuildingMap.entrySet()){
+                    BRAVHBuildingSet bravhBuildingSet = entry.getValue();
+                    String moduleClassName = bravhBuildingSet.getRecyclerHolderModuleClass().toString();
+                    if(moduleClassName.equals(fullName)){
+                        if (ele.asType().toString().contains(ClassUtil.BASE_QUICK_ADAPTER.toString())) {
+                            bravhBuildingSet.bindInjectAdapter(ele);
+                        } else if (ele.asType().toString().equals(LoadMoreAble.class.getName())) {
+                            bravhBuildingSet.bindInjectLoadMore(ele);
+                        }
                     }
                 }
             }
@@ -133,10 +143,21 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
                 mLogger.info("bind      '" + ele.getSimpleName() + "'     loadMore");
 
                 TypeElement classFile = (TypeElement) ele.getEnclosingElement();
+                String fullName = ClassUtil.getFullName(classFile);
+
                 BRAVHBuildingSet buildingSet = mBuildingMap.get(classFile.getQualifiedName().toString());
                 if (buildingSet != null) {
                     //if have @BindOnLoadMore
                     buildingSet.bindLoadMore(ele);
+                }
+
+                for(Map.Entry<String,BRAVHBuildingSet> entry : mBuildingMap.entrySet()){
+                    BRAVHBuildingSet bravhBuildingSet = entry.getValue();
+                    String moduleClassName = bravhBuildingSet.getRecyclerHolderModuleClass().toString();
+                    if(moduleClassName.equals(fullName)){
+                        //if have @BindOnLoadMore
+                        bravhBuildingSet.bindLoadMore(ele);
+                    }
                 }
             }
         }
@@ -156,27 +177,13 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
         }
     }
 
-    private void bindRecyclerHolder(RoundEnvironment roundEnvironment) {
+    private void bindClassAnnotation(RoundEnvironment roundEnvironment) {
         Set<? extends Element> recyclerHolderElements = roundEnvironment.getElementsAnnotatedWith(RecyclerHolder.class);
         for (Element ele : recyclerHolderElements) {
             mLogger.info("bind      '" + ele.getSimpleName() + "'     RecyclerHolder");
 
             TypeElement classFile = (TypeElement) ele;
             BRAVHBuildingSet buildingSet = new BRAVHBuildingSet(ele);
-
-            RecyclerHolder recyclerHolder = ele.getAnnotation(RecyclerHolder.class);
-            TypeName moduleType = null;
-            try {
-                ClassName.get(recyclerHolder.module());
-            }catch (MirroredTypeException exception){
-                TypeMirror locatorType = exception.getTypeMirror();
-                moduleType = ClassName.get(locatorType);
-            }
-
-            if(!"void".equals(moduleType.toString())){
-                mBuildingMap.put(moduleType.toString(),buildingSet);
-            }
-
             mBuildingMap.put(classFile.getQualifiedName().toString(), buildingSet);
         }
     }
@@ -184,11 +191,10 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         HashSet<String> types = new HashSet<>();
-        types.add("io.github.keep2iron.orange.annotations.RecyclerHolder");
-        types.add("io.github.keep2iron.orange.annotations.BindConvert");
-        types.add("io.github.keep2iron.orange.annotations.BindOnLoadMore");
-        types.add("io.github.keep2iron.orange.annotations.BindOnRefresh");
-        types.add("javax.inject.Inject");
+        types.add(RecyclerHolder.class.getCanonicalName());
+        types.add(BindConvert.class.getCanonicalName());
+        types.add(BindOnLoadMore.class.getCanonicalName());
+        types.add(Inject.class.getCanonicalName());
         return types;
     }
 

@@ -6,7 +6,7 @@ import com.chad.library.adapter.base.BaseViewHolder;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-import io.github.keep2iron.orange.annotations.OnRefresh;
+import io.github.keep2iron.orange.annotations.intrnal.OnRefresh;
 
 /**
  * @author keep2iron <a href="http://keep2iron.github.io">Contract me.</a>

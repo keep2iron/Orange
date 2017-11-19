@@ -25,15 +25,12 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
-import io.github.keep2iron.orange.BRAVHBuildingSet;
 import io.github.keep2iron.orange.RefreshBuildingSet;
-import io.github.keep2iron.orange.annotations.BindOnRefresh;
-import io.github.keep2iron.orange.annotations.LoadMoreAble;
+import io.github.keep2iron.orange.annotations.bind.BindOnRefresh;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
-import io.github.keep2iron.orange.annotations.Refreshable;
+import io.github.keep2iron.orange.annotations.extra.Refreshable;
 import io.github.keep2iron.orange.util.ClassUtil;
 import io.github.keep2iron.orange.util.Constants;
-import io.github.keep2iron.orange.util.Util;
 
 /**
  * @author keep2iron <a href="http://keep2iron.github.io">Contract me.</a>
@@ -43,7 +40,7 @@ import io.github.keep2iron.orange.util.Util;
 @AutoService(Processor.class)
 @SupportedAnnotationTypes({
         "io.github.keep2iron.orange.annotations.RecyclerHolder",
-        "io.github.keep2iron.orange.annotations.BindOnRefresh"
+        "io.github.keep2iron.orange.annotations.bind.BindOnRefresh"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
 public class RefreshAdapterProcessor extends AbstractProcessor {
@@ -51,8 +48,7 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
      * one @RecyclerHolder java file map into a BRAVHBuildingSet object to generate file
      */
     private ConcurrentHashMap<String, RefreshBuildingSet> mBuildingMap;
-    private Elements mElementUtils;
-    private Types mTypeUtils;
+
     private Filer mFiler;
 
     String refreshClassName;
@@ -64,8 +60,9 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
         super.init(processingEnvironment);
 
         //init utils
-        mElementUtils = processingEnvironment.getElementUtils();
-        mTypeUtils = processingEnvironment.getTypeUtils();
+        Elements elementUtils = processingEnvironment.getElementUtils();
+        Types typeUtils = processingEnvironment.getTypeUtils();
+        ClassUtil.init(elementUtils,typeUtils);
         mFiler = processingEnvironment.getFiler();
         mBuildingMap = new ConcurrentHashMap<>(50);
 
@@ -100,8 +97,6 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
     private void bindRecyclerHolder(RoundEnvironment roundEnvironment) {
         Set<? extends Element> recyclerHolderElements = roundEnvironment.getElementsAnnotatedWith(RecyclerHolder.class);
         for (Element ele : recyclerHolderElements) {
-            TypeElement classFile = (TypeElement) ele;
-            RefreshBuildingSet buildingSet = new RefreshBuildingSet(ele);
 
             RecyclerHolder recyclerHolder = ele.getAnnotation(RecyclerHolder.class);
             TypeName moduleType = null;
@@ -112,11 +107,18 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
                 moduleType = ClassName.get(locatorType);
             }
 
-            if(!"void".equals(moduleType.toString())){
-                mBuildingMap.put(moduleType.toString(), buildingSet);
+            RefreshBuildingSet buildingSet = mBuildingMap.get(moduleType.toString());
+            //if the first building
+            if(buildingSet == null) {
+                TypeElement classFile = (TypeElement) ele;
+                buildingSet = new RefreshBuildingSet(ele);
+                if (!"void".equals(moduleType.toString())) {
+                    mBuildingMap.put(moduleType.toString(), buildingSet);
+                }
+                mBuildingMap.put(classFile.getQualifiedName().toString(), buildingSet);
             }
 
-            mBuildingMap.put(classFile.getQualifiedName().toString(), buildingSet);
+            buildingSet.buildConstructor(ele);
         }
     }
 
@@ -154,8 +156,8 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         HashSet<String> types = new HashSet<>();
-        types.add("io.github.keep2iron.orange.annotations.BindOnRefresh");
-        types.add("io.github.keep2iron.orange.annotations.RecyclerHolder");
+        types.add(BindOnRefresh.class.getCanonicalName());
+        types.add(RecyclerHolder.class.getCanonicalName());
         return types;
     }
 

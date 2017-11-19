@@ -1,4 +1,4 @@
-package io.github.keep2iron.orange.annotations;
+package io.github.keep2iron.orange.annotations.bind;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -8,9 +8,11 @@ import java.lang.annotation.Target;
 /**
  * @author keep2iron <a href="http://keep2iron.github.io">Contract me.</a>
  * @version 1.0
- * @since 2017/11/05 14:36
+ * @since 2017/11/09 12:39
+ * <p>
+ * bind a method on load more
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
-public @interface BindMutileType {
+public @interface BindOnLoadMore {
 }

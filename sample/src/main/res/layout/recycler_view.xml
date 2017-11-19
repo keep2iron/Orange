@@ -5,7 +5,7 @@
     tools:context="io.github.keep2iron.sample.MainActivity">
 
     <data>
-
+        <import type="io.github.keep2iron.orange.WrapContentLinearLayoutManager" alias="WrapContentLinearLayoutManager"/>
         <import type="android.support.v7.widget.LinearLayoutManager" />
 
         <variable
@@ -21,7 +21,7 @@
             android:id="@+id/recyclerView"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            app:layoutManager="LinearLayoutManager"
+            app:adapter="@{viewModule.mAdapter}"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

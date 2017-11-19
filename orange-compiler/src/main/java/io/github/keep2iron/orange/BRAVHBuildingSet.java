@@ -17,16 +17,25 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 
-import io.github.keep2iron.orange.annotations.LoadMoreAble;
-import io.github.keep2iron.orange.annotations.OnLoadMore;
+import io.github.keep2iron.orange.annotations.DragAble;
+import io.github.keep2iron.orange.annotations.SwipeAble;
+import io.github.keep2iron.orange.annotations.extra.LoadMoreAble;
+import io.github.keep2iron.orange.annotations.extra.SlideDirection;
+import io.github.keep2iron.orange.annotations.intrnal.IModuleClass;
+import io.github.keep2iron.orange.annotations.intrnal.OnLoadMore;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
+import io.github.keep2iron.orange.annotations.intrnal.OnSwipeOrDrag;
 import io.github.keep2iron.orange.util.ClassUtil;
 
+import static io.github.keep2iron.orange.util.ClassUtil.BASE_DRAG_ADAPTER;
 import static io.github.keep2iron.orange.util.ClassUtil.BASE_QUICK_ADAPTER;
 import static io.github.keep2iron.orange.util.ClassUtil.BASE_VIEW_HOLDER;
 import static io.github.keep2iron.orange.util.ClassUtil.CONTEXT_CLASS;
 import static io.github.keep2iron.orange.util.ClassUtil.DATA_BINDING_UTILS_CLASS;
+import static io.github.keep2iron.orange.util.ClassUtil.ITEM_DRAG_AND_SWIPE_CALLBACK;
+import static io.github.keep2iron.orange.util.ClassUtil.ITEM_TOUCH_HELPER;
 import static io.github.keep2iron.orange.util.ClassUtil.LIST_CLASS;
+import static io.github.keep2iron.orange.util.ClassUtil.ON_ITEM_SWIPE_LISTENER;
 import static io.github.keep2iron.orange.util.ClassUtil.VIEW_CLASS;
 import static io.github.keep2iron.orange.util.ClassUtil.VIEW_DATA_BINDING_CLASS;
 import static io.github.keep2iron.orange.util.ClassUtil.VIEW_GROUP_CLASS;
@@ -61,9 +70,22 @@ public class BRAVHBuildingSet {
     boolean mIsUseDataBinding;
     ClassName mDataBindingViewHolderClass;
 
+    TypeName mRecyclerHolderClass;
+    TypeName mRecyclerHolderModuleClass;
+
+    public TypeName getRecyclerHolderModuleClass() {
+        return mRecyclerHolderModuleClass;
+    }
+
     public BRAVHBuildingSet(Element recyclerHolderType) {
         //get @RecyclerHolder arguments
         RecyclerHolder recyclerHolder = recyclerHolderType.getAnnotation(RecyclerHolder.class);
+        DragAble dragAble = recyclerHolderType.getAnnotation(DragAble.class);
+        SwipeAble swipeAble = recyclerHolderType.getAnnotation(SwipeAble.class);
+
+        mRecyclerHolderClass = ClassName.get(recyclerHolderType.asType());
+
+
         mPackageName = ClassName.get((TypeElement) recyclerHolderType).packageName();
         //moduleType  生成的LoadMoreAble对象和Refreshable对象注入到对象中module
         TypeName moduleType = null;
@@ -84,10 +106,7 @@ public class BRAVHBuildingSet {
         } catch (MirroredTypeException exception) {
             TypeMirror locatorType = exception.getTypeMirror();
             moduleType = ClassName.get(locatorType);
-
-            if ("void".equals(moduleType.toString())) {
-                moduleType = ClassName.get(recyclerHolderType.asType());
-            }
+            mRecyclerHolderModuleClass = moduleType;
         }
 
         if (mIsUseDataBinding) {
@@ -97,14 +116,19 @@ public class BRAVHBuildingSet {
 
         if (itemResIds.length > 1) {
         } else if (itemResIds.length == 1) {
+            boolean isEnableSwipeOrSlide = dragAble != null || swipeAble != null;
+            ClassName superClass = isEnableSwipeOrSlide ? BASE_DRAG_ADAPTER : BASE_QUICK_ADAPTER;
+
+
             //extends from BaseQuickAdapter
             mClassBuilder = TypeSpec.classBuilder(recyclerHolderType.getSimpleName() + "Adapter")
                     .addModifiers(Modifier.PUBLIC)
-                    .superclass(ParameterizedTypeName.get(BASE_QUICK_ADAPTER, mGenericType, mIsUseDataBinding ? mDataBindingViewHolderClass : BASE_VIEW_HOLDER));
+                    .superclass(ParameterizedTypeName.get(superClass, mGenericType, mIsUseDataBinding ? mDataBindingViewHolderClass : BASE_VIEW_HOLDER));
 
             createField(recyclerHolderType, "mViewLayer");
             createField(moduleType, "mModuleLayer");
             createConstructor(recyclerHolderType, moduleType, mGenericType, itemResIds[0], headerResId);
+            openSwipeOrSlide(dragAble,swipeAble);
         } else {
             throw new IllegalArgumentException("your must define least 1 items id in @RecyclerHolder(items={})");
         }
@@ -113,6 +137,51 @@ public class BRAVHBuildingSet {
         if (mIsUseDataBinding) {
             createDataBindingMethod(recyclerHolderType);
         }
+    }
+
+    private void openSwipeOrSlide(DragAble dragAble, SwipeAble swipeAble) {
+        if(dragAble == null && swipeAble == null) return;
+
+        mClassBuilder.addSuperinterface(ParameterizedTypeName.get(ClassName.get(OnSwipeOrDrag.class),ClassUtil.RECYCLER_VIEW_CLASS));
+
+        MethodSpec.Builder attachMethod = MethodSpec.methodBuilder("attachRecyclerView")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(ClassUtil.RECYCLER_VIEW_CLASS, "recyclerView")
+                .addParameter(Object.class,"onDragListener")
+                .addParameter(Object.class,"onSwipeListener")
+                .returns(void.class);
+
+        attachMethod.addStatement("$T itemDragAndSwipeCallback = new $T(this)",ITEM_DRAG_AND_SWIPE_CALLBACK,ITEM_DRAG_AND_SWIPE_CALLBACK);
+        attachMethod.addStatement("$T itemTouchHelper = new $T(itemDragAndSwipeCallback)",ITEM_TOUCH_HELPER,ITEM_TOUCH_HELPER);
+        attachMethod.addStatement("itemTouchHelper.attachToRecyclerView(recyclerView)");
+
+        if(swipeAble != null){
+            int flag = swipeAble.flag();
+            if(flag == -1){
+                flag = SlideDirection.START;
+            }
+
+            attachMethod.addStatement("itemDragAndSwipeCallback.setSwipeMoveFlags($L)",flag);
+            attachMethod.addStatement("enableSwipeItem()");
+            attachMethod.beginControlFlow("if(onSwipeListener != null)");
+            attachMethod.addStatement("setOnItemSwipeListener(($T)onSwipeListener)",ON_ITEM_SWIPE_LISTENER);
+            attachMethod.endControlFlow();
+        }
+
+        if(dragAble != null){
+            int flag = dragAble.flag();
+            if(flag == -1){
+                flag = SlideDirection.LEFT | SlideDirection.RIGHT | SlideDirection.UP | SlideDirection.DOWN;
+            }
+            attachMethod.addStatement("itemDragAndSwipeCallback.setDragMoveFlags($L)",flag);
+            attachMethod.addStatement("enableDragItem(itemTouchHelper)");
+            attachMethod.beginControlFlow("if(onDragListener != null)");
+            attachMethod.addStatement("setOnItemDragListener(($T)onDragListener)",ClassUtil.ON_ITEM_DRAG_LISTENER);
+            attachMethod.endControlFlow();
+        }
+
+        mClassBuilder.addMethod(attachMethod.build());
     }
 
     private void createDataBindingMethod(Element recyclerHolderType) {
@@ -185,6 +254,14 @@ public class BRAVHBuildingSet {
             mConstructorBuilder.addStatement("$T headerView = $T.inflate(context,$L,null)", VIEW_CLASS, VIEW_CLASS, headerResId)
                     .addStatement("addHeaderView(headerView)");
         }
+
+        mClassBuilder.addSuperinterface(IModuleClass.class);
+        mClassBuilder.addMethod(MethodSpec.methodBuilder("getRefreshModuleAdapterClassName")
+                .returns(String.class)
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement("return $S",mPackageName + "." + ClassUtil.toSimpleName(moduleType) + "RefreshAdapter")
+                .build());
     }
 
     /**
@@ -238,8 +315,14 @@ public class BRAVHBuildingSet {
         if (injectFiled.getModifiers().contains(Modifier.PRIVATE)) {
             throw new IllegalArgumentException(injectFiled.getSimpleName() + "can't set private,please use default or public");
         }
+        Element element = injectFiled.getEnclosingElement();
+        String fullName = ClassUtil.getFullName(element);
 
-        mConstructorBuilder.addStatement("mViewLayer.$N = this", injectFiled.getSimpleName().toString());
+        if(fullName.equals(mRecyclerHolderClass.toString())){
+            mConstructorBuilder.addStatement("mViewLayer.$N = this", injectFiled.getSimpleName().toString());
+        }else if(fullName.equals(mRecyclerHolderModuleClass.toString())){
+            mConstructorBuilder.addStatement("mModuleLayer.$N = this", injectFiled.getSimpleName().toString());
+        }
     }
 
     public void bindInjectLoadMore(Element injectFiled) {

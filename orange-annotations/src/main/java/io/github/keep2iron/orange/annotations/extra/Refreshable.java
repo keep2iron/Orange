@@ -1,4 +1,4 @@
-package io.github.keep2iron.orange.annotations;
+package io.github.keep2iron.orange.annotations.extra;
 
 /**
  * @author keep2iron <a href="http://keep2iron.github.io">Contract me.</a>

@@ -5,6 +5,9 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
+import com.chad.library.adapter.base.listener.OnItemDragListener;
+import com.chad.library.adapter.base.listener.OnItemSwipeListener;
+
 import java.util.List;
 
 /**
@@ -24,21 +27,26 @@ public class OrangeOptions<T> {
     RefreshViewAdapter refreshAdapter;
     int pageItem = MAX_ITEM_COUNT;
 
-    LinearLayoutManager layoutManager;
-
     boolean isLoadMore;
     boolean isRefresh;
+    boolean isDragOrSwipe;
 
     Object mModule;
 
+    OnItemDragListener mOnItemDragListener;
+    OnItemSwipeListener mOnItemSwipeListener;
 
-    public OrangeOptions(Object module,@NonNull Context context) {
-        this.context = context.getApplicationContext();
-        this.mModule = module;
+    public void setOnItemDragListener(OnItemDragListener onItemDragListener) {
+        mOnItemDragListener = onItemDragListener;
     }
 
-    public void buildVertical() {
-        layoutManager = new WrapContentLinearLayoutManager(context);
+    public void setOnItemSwipeListener(OnItemSwipeListener onItemSwipeListener) {
+        mOnItemSwipeListener = onItemSwipeListener;
+    }
+
+    public OrangeOptions(Object module, @NonNull Context context) {
+        this.context = context.getApplicationContext();
+        this.mModule = module;
     }
 
     public void buildRecyclerViewAdapter(RecyclerView recyclerView, @NonNull List<T> data) {

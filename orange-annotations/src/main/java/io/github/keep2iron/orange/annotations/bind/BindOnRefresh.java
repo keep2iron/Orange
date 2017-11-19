@@ -1,4 +1,4 @@
-package io.github.keep2iron.orange.annotations;
+package io.github.keep2iron.orange.annotations.bind;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
