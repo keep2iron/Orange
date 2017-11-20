@@ -2,7 +2,6 @@ package io.github.keep2iron.orange.annotations.extra;
 
 /**
  * @author keep-iron
- * @date 17-11-18
  */
 public interface SlideDirection {
 
