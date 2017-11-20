@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import io.github.keep2iron.orange.Orange;
 import io.github.keep2iron.orange.OrangeOptions;
+import io.github.keep2iron.orange.annotations.DragAble;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
 import io.github.keep2iron.orange.annotations.SwipeAble;
 import io.github.keep2iron.orange.annotations.bind.BindConvert;
@@ -13,7 +14,7 @@ import io.github.keep2iron.sample.databinding.ItemDragBinding;
 import io.github.keep2iron.sample.databinding.RecyclerViewBinding;
 
 
-//@DragAble
+@DragAble
 @SwipeAble
 @RecyclerHolder(type = String.class,
         items = {R.layout.item_drag},

@@ -44,7 +44,7 @@ public class RecyclerModule {
 
     int loadMoreCount = 1;
 
-    @BindOnLoadMore
+//    @BindOnLoadMore
     public void onLoadMore() {
         DataServer.httpData(new DataServer.Callback<String>() {
             @Override
