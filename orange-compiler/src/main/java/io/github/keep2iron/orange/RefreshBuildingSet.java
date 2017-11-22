@@ -43,6 +43,7 @@ public class RefreshBuildingSet {
 
     private HashSet<String> viewLayerClassName = new HashSet<>();
 
+    public boolean isRefresh;
 
     public RefreshBuildingSet(Element recyclerHolderType) {
         RecyclerHolder recyclerHolder = recyclerHolderType.getAnnotation(RecyclerHolder.class);
@@ -176,6 +177,8 @@ public class RefreshBuildingSet {
                 .returns(void.class)
                 .addStatement("mModuleLayer.$N()",
                         onRefreshMethod.getSimpleName().toString()).build());
+
+        isRefresh = true;
     }
 
     public void bindInject(Element injectFiled) {

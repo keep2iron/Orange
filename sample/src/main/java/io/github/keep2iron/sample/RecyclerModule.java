@@ -56,8 +56,8 @@ public class RecyclerModule {
                 mLoadMoreAble.showLoadMoreComplete();
                 mAdapter.notifyDataSetChanged();
             }
-
             @Override
+
             public void onError() {
 
             }

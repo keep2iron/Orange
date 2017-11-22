@@ -62,7 +62,7 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
         //init utils
         Elements elementUtils = processingEnvironment.getElementUtils();
         Types typeUtils = processingEnvironment.getTypeUtils();
-        ClassUtil.init(elementUtils,typeUtils);
+        ClassUtil.init(elementUtils, typeUtils);
         mFiler = processingEnvironment.getFiler();
         mBuildingMap = new ConcurrentHashMap<>(50);
 
@@ -88,7 +88,10 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
         buildInject(roundEnvironment);
 
         for (Map.Entry<String, RefreshBuildingSet> entry : mBuildingMap.entrySet()) {
-            entry.getValue().build(mFiler);
+            RefreshBuildingSet buildingSet = entry.getValue();
+            if (buildingSet.isRefresh) {
+                buildingSet.build(mFiler);
+            }
         }
 
         return false;
@@ -102,14 +105,14 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
             TypeName moduleType = null;
             try {
                 ClassName.get(recyclerHolder.module());
-            }catch (MirroredTypeException exception){
+            } catch (MirroredTypeException exception) {
                 TypeMirror locatorType = exception.getTypeMirror();
                 moduleType = ClassName.get(locatorType);
             }
 
             RefreshBuildingSet buildingSet = mBuildingMap.get(moduleType.toString());
             //if the first building
-            if(buildingSet == null) {
+            if (buildingSet == null) {
                 TypeElement classFile = (TypeElement) ele;
                 buildingSet = new RefreshBuildingSet(ele);
                 if (!"void".equals(moduleType.toString())) {
@@ -125,7 +128,7 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
     private void bindOnRefresh(RoundEnvironment roundEnvironment) {
         Set<? extends Element> refreshElements = roundEnvironment.getElementsAnnotatedWith(BindOnRefresh.class);
         if (refreshElements != null &&
-            refreshElements.size() != 0) {
+                refreshElements.size() != 0) {
 
             for (Element ele : refreshElements) {
                 TypeElement classFile = (TypeElement) ele.getEnclosingElement();
