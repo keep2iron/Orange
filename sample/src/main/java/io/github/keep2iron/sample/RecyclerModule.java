@@ -9,8 +9,7 @@ import com.chad.library.adapter.base.BaseViewHolder;
 
 import java.util.List;
 
-import javax.inject.Inject;
-
+import io.github.keep2iron.orange.annotations.bind.Bind;
 import io.github.keep2iron.orange.annotations.bind.BindOnLoadMore;
 import io.github.keep2iron.orange.annotations.bind.BindOnRefresh;
 import io.github.keep2iron.orange.annotations.extra.LoadMoreAble;
@@ -24,13 +23,13 @@ import io.github.keep2iron.sample.repository.DataServer;
  */
 public class RecyclerModule {
 
-    @Inject
+    @Bind
     Refreshable mRefreshable;
 
-    @Inject
+    @Bind
     LoadMoreAble mLoadMoreAble;
 
-    @Inject
+    @Bind
     public BaseQuickAdapter<String, ? extends BaseViewHolder> mAdapter;
 
     public ObservableList<String> mData;

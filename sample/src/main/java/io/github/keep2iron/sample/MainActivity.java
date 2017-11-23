@@ -9,10 +9,10 @@ import android.support.v7.widget.RecyclerView;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 
-import javax.inject.Inject;
 
 import io.github.keep2iron.orange.Orange;
 import io.github.keep2iron.orange.OrangeOptions;
+import io.github.keep2iron.orange.annotations.bind.Bind;
 import io.github.keep2iron.orange.annotations.bind.BindConvert;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
 import io.github.keep2iron.sample.databinding.ItemDefaultBinding;
@@ -28,7 +28,7 @@ import io.github.keep2iron.sample.databinding.RecyclerViewBinding;
 )
 public class MainActivity extends AppCompatActivity {
 
-    @Inject
+    @Bind
     BaseQuickAdapter<String, ? extends BaseViewHolder> mAdapter;
 
     @Override

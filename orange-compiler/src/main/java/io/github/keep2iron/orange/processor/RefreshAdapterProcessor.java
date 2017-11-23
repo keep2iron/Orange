@@ -16,7 +16,6 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
-import javax.inject.Inject;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -26,6 +25,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
 import io.github.keep2iron.orange.RefreshBuildingSet;
+import io.github.keep2iron.orange.annotations.bind.Bind;
 import io.github.keep2iron.orange.annotations.bind.BindOnRefresh;
 import io.github.keep2iron.orange.annotations.RecyclerHolder;
 import io.github.keep2iron.orange.annotations.extra.Refreshable;
@@ -142,7 +142,7 @@ public class RefreshAdapterProcessor extends AbstractProcessor {
     }
 
     public void buildInject(RoundEnvironment roundEnvironment) {
-        Set<? extends Element> injectElements = roundEnvironment.getElementsAnnotatedWith(Inject.class);
+        Set<? extends Element> injectElements = roundEnvironment.getElementsAnnotatedWith(Bind.class);
         if (injectElements != null && injectElements.size() != 0) {
             for (Element ele : injectElements) {
                 TypeElement classFile = (TypeElement) ele.getEnclosingElement();

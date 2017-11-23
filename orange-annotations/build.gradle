@@ -22,7 +22,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     compileOnly deps.android_support_annotations
 
-    api 'javax.inject:javax.inject:1'
+//    api 'javax.inject:javax.inject:1'
 }
 
 tasks.withType(JavaCompile) {

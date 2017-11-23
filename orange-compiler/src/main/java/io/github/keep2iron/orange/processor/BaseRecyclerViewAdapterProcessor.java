@@ -15,7 +15,6 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedSourceVersion;
-import javax.inject.Inject;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -25,6 +24,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
 import io.github.keep2iron.orange.BRAVHBuildingSet;
+import io.github.keep2iron.orange.annotations.bind.Bind;
 import io.github.keep2iron.orange.annotations.bind.BindConvert;
 import io.github.keep2iron.orange.annotations.bind.BindOnLoadMore;
 import io.github.keep2iron.orange.annotations.extra.LoadMoreAble;
@@ -104,7 +104,7 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
     }
 
     private void bindInjectField(RoundEnvironment roundEnvironment) {
-        Set<? extends Element> injectElements = roundEnvironment.getElementsAnnotatedWith(Inject.class);
+        Set<? extends Element> injectElements = roundEnvironment.getElementsAnnotatedWith(Bind.class);
         if (injectElements != null && injectElements.size() != 0) {
             for (Element ele : injectElements) {
                 mLogger.info("bind      '" + ele.getSimpleName() + "'     inject");
@@ -194,7 +194,7 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
         types.add(RecyclerHolder.class.getCanonicalName());
         types.add(BindConvert.class.getCanonicalName());
         types.add(BindOnLoadMore.class.getCanonicalName());
-        types.add(Inject.class.getCanonicalName());
+        types.add(Bind.class.getCanonicalName());
         return types;
     }
 
