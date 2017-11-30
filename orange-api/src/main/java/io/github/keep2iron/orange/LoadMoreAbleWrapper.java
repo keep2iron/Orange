@@ -50,11 +50,17 @@ public class LoadMoreAbleWrapper implements LoadMoreAble {
 
     @Override
     public void showLoadMoreError() {
+        if (mOptions.isRefresh) {
+            mRefreshAdapter.mRefreshLayout.setEnabled(true);
+        }
         mLoadMoreAdapter.loadMoreFail();
     }
 
     @Override
     public void showLoadMoreEnd() {
+        if (mOptions.isRefresh) {
+            mRefreshAdapter.mRefreshLayout.setEnabled(true);
+        }
         mLoadMoreAdapter.loadMoreEnd();
     }
 }

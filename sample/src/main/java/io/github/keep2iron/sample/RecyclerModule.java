@@ -32,18 +32,14 @@ public class RecyclerModule {
     @Bind
     public BaseQuickAdapter<String, ? extends BaseViewHolder> mAdapter;
 
-    public ObservableList<String> mData;
+    public ObservableList<String> mData = new ObservableArrayList<>();
 
     public RecyclerModule() {
-        mData = new ObservableArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            mData.add(Math.random() * 100 + "");
-        }
     }
 
     int loadMoreCount = 1;
 
-//    @BindOnLoadMore
+    @BindOnLoadMore
     public void onLoadMore() {
         DataServer.httpData(new DataServer.Callback<String>() {
             @Override

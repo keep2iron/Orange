@@ -25,7 +25,7 @@ public class DataServer {
             @Override
             public void run() {
                 final List<String> data = new ArrayList<>();
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 3; i++) {
                     data.add(Math.random() * 100 + "");
                 }
 

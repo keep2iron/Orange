@@ -2,9 +2,12 @@ package io.github.keep2iron.sample;
 
 import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
+import android.view.View;
+import android.view.ViewTreeObserver;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
@@ -36,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         RecyclerViewBinding binding = DataBindingUtil.setContentView(this, R.layout.recycler_view);
 
-        RecyclerModule recyclerModule = new RecyclerModule();
+        final RecyclerModule recyclerModule = new RecyclerModule();
         binding.setViewModule(recyclerModule);
 
         OrangeOptions<String> options = new OrangeOptions<>(recyclerModule, getApplicationContext());
@@ -45,6 +48,9 @@ public class MainActivity extends AppCompatActivity {
         options.buildPageItem(15);
 
         Orange.inject(options, this);
+
+        recyclerModule.mRefreshable.refresh();
+        recyclerModule.onRefresh();
     }
 
     @BindConvert
