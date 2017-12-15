@@ -145,18 +145,18 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
                 TypeElement classFile = (TypeElement) ele.getEnclosingElement();
                 String fullName = ClassUtil.getFullName(classFile);
 
-                BRAVHBuildingSet buildingSet = mBuildingMap.get(classFile.getQualifiedName().toString());
+                BRAVHBuildingSet buildingSet = mBuildingMap.get(fullName);
                 if (buildingSet != null) {
                     //if have @BindOnLoadMore
                     buildingSet.bindLoadMore(ele);
-                }
-
-                for(Map.Entry<String,BRAVHBuildingSet> entry : mBuildingMap.entrySet()){
-                    BRAVHBuildingSet bravhBuildingSet = entry.getValue();
-                    String moduleClassName = bravhBuildingSet.getRecyclerHolderModuleClass().toString();
-                    if(moduleClassName.equals(fullName)){
-                        //if have @BindOnLoadMore
-                        bravhBuildingSet.bindLoadMore(ele);
+                }else{
+                    for(Map.Entry<String,BRAVHBuildingSet> entry : mBuildingMap.entrySet()){
+                        BRAVHBuildingSet bravhBuildingSet = entry.getValue();
+                        String moduleClassName = bravhBuildingSet.getRecyclerHolderModuleClass().toString();
+                        if(moduleClassName.equals(fullName)){
+                            //if have @BindOnLoadMore
+                            bravhBuildingSet.bindLoadMore(ele);
+                        }
                     }
                 }
             }
