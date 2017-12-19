@@ -1,7 +1,6 @@
 package io.github.keep2iron.sample;
 
 import android.databinding.ObservableArrayList;
-import android.databinding.ObservableList;
 import android.util.Log;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
@@ -32,7 +31,7 @@ public class RecyclerModule {
     @Bind
     public BaseQuickAdapter<String, ? extends BaseViewHolder> mAdapter;
 
-    public ObservableList<String> mData = new ObservableArrayList<>();
+    public ObservableArrayList<String> mData = new ObservableArrayList<>();
 
     public RecyclerModule() {
     }

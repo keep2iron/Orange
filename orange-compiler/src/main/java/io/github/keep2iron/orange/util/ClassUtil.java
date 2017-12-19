@@ -29,7 +29,7 @@ public class ClassUtil {
     public final static ClassName VIEW_GROUP_CLASS = ClassName.get("android.view", "ViewGroup");
     public final static ClassName RECYCLER_VIEW_CLASS = ClassName.get("android.support.v7.widget", "RecyclerView");
     public final static ClassName ITEM_TOUCH_HELPER = ClassName.get("android.support.v7.widget.helper","ItemTouchHelper");
-
+    public final static ClassName RECYCLER_ADAPTER = ClassName.get("android.support.v7.widget", "RecyclerView.Adapter");
 
     public final static ClassName DATA_BINDING_UTILS_CLASS = ClassName.get("android.databinding", "DataBindingUtil");
     public final static ClassName VIEW_DATA_BINDING_CLASS = ClassName.get("android.databinding", "ViewDataBinding");

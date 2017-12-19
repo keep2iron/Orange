@@ -73,7 +73,7 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
         // Package the log utils.
         mLogger = new Logger(processingEnv.getMessager());
 
-        ClassUtil.init(mElementUtils,mTypeUtils);
+        ClassUtil.init(mElementUtils, mTypeUtils);
     }
 
     @Override
@@ -114,17 +114,18 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
 
                 BRAVHBuildingSet buildingSet = mBuildingMap.get(fullName);
                 if (buildingSet != null) {
-                    if (ele.asType().toString().contains(ClassUtil.BASE_QUICK_ADAPTER.toString())) {
+                    if (ele.asType().toString().contains(ClassUtil.BASE_QUICK_ADAPTER.toString()) ||
+                            ele.asType().toString().contains(ClassUtil.RECYCLER_ADAPTER.toString())) {
                         buildingSet.bindInjectAdapter(ele);
                     } else if (ele.asType().toString().equals(LoadMoreAble.class.getName())) {
                         buildingSet.bindInjectLoadMore(ele);
                     }
                 }
 
-                for(Map.Entry<String,BRAVHBuildingSet> entry : mBuildingMap.entrySet()){
+                for (Map.Entry<String, BRAVHBuildingSet> entry : mBuildingMap.entrySet()) {
                     BRAVHBuildingSet bravhBuildingSet = entry.getValue();
                     String moduleClassName = bravhBuildingSet.getRecyclerHolderModuleClass().toString();
-                    if(moduleClassName.equals(fullName)){
+                    if (moduleClassName.equals(fullName)) {
                         if (ele.asType().toString().contains(ClassUtil.BASE_QUICK_ADAPTER.toString())) {
                             bravhBuildingSet.bindInjectAdapter(ele);
                         } else if (ele.asType().toString().equals(LoadMoreAble.class.getName())) {
@@ -149,11 +150,11 @@ public class BaseRecyclerViewAdapterProcessor extends AbstractProcessor {
                 if (buildingSet != null) {
                     //if have @BindOnLoadMore
                     buildingSet.bindLoadMore(ele);
-                }else{
-                    for(Map.Entry<String,BRAVHBuildingSet> entry : mBuildingMap.entrySet()){
+                } else {
+                    for (Map.Entry<String, BRAVHBuildingSet> entry : mBuildingMap.entrySet()) {
                         BRAVHBuildingSet bravhBuildingSet = entry.getValue();
                         String moduleClassName = bravhBuildingSet.getRecyclerHolderModuleClass().toString();
-                        if(moduleClassName.equals(fullName)){
+                        if (moduleClassName.equals(fullName)) {
                             //if have @BindOnLoadMore
                             bravhBuildingSet.bindLoadMore(ele);
                         }

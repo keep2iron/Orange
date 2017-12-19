@@ -21,5 +21,11 @@ public interface OnRefresh {
      */
     void setRefreshableWithHolder(Refreshable refreshable);
 
-    void setRefreshListener(Object view,Object refreshListener);
+    /**
+     * 为view对象设置刷新listener
+     *
+     * @param view            View对象
+     * @param refreshListener 刷新监听
+     */
+    void setRefreshListener(Object view, Object refreshListener);
 }

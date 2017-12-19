@@ -32,7 +32,7 @@ import io.github.keep2iron.sample.databinding.RecyclerViewBinding;
 public class MainActivity extends AppCompatActivity {
 
     @Bind
-    BaseQuickAdapter<String, ? extends BaseViewHolder> mAdapter;
+    RecyclerView.Adapter<? extends BaseViewHolder> mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
